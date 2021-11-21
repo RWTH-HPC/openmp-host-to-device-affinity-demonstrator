@@ -100,6 +100,8 @@
 #include <omp.h>
 #include "util_string.h"
 
+#include "matrix.cuh"
+
 #if CHECK_GENERATED_TASK_ID
 #include <mutex>
 #endif
@@ -111,6 +113,7 @@
 #ifndef DPxPTR
 #define DPxPTR(ptr) ((int)(2*sizeof(uintptr_t))), ((uintptr_t) (ptr))
 #endif
+
 
 
 typedef enum matrix_size_mode_t {
@@ -432,6 +435,8 @@ int main(int argc, char **argv)
 #endif
     }
 
+    kernel::init();
+
 
 #if COMPILE_TASKING
     fTimeStart=omp_get_wtime();
@@ -461,7 +466,8 @@ int main(int argc, char **argv)
             // uses normal tasks to have a fair comparison
             #pragma omp task default(shared) firstprivate(i,cur_size)
             {
-                compute_matrix_matrix(matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
+                //compute_matrix_matrix(matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
+                kernel::execute_matrix_multiply_kernel_async(matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 0);
             }
         }
 
@@ -469,6 +475,9 @@ int main(int argc, char **argv)
         }
 #endif
     }
+    kernel::syncronize(0);
+    kernel::free(0);
+
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
