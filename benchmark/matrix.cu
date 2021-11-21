@@ -1,8 +1,6 @@
 #include "matrix.cuh"
 #include <vector>
 
-static std::vector<std::vector<void*>> alloc;
-
 __global__ void matrix_mutliply(
         const double *a, const double *b, double *c) {
     __shared__ double res;
@@ -25,12 +23,6 @@ __global__ void matrix_mutliply(
 
     if (threadIdx.x == 0)
         c[blockIdx.x * blockDim.x + blockIdx.y] = res; //c[bx][by]
-}
-
-void kernel::init() {
-    int count; 
-    cudaGetDeviceCount(&count);
-    alloc = std::vector<std::vector<void*>>(count);
 }
 
 void kernel::execute_matrix_multiply_kernel_async(const double *a, 
@@ -59,23 +51,12 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
     matrix_mutliply<<<blocks,threads>>>(d_a, d_b, d_c);
     cudaMemcpyAsync(c, d_c, size, cudaMemcpyDeviceToHost);
 
-    #pragma omp critical
-    {
-        alloc[device].push_back((void*)d_a);
-        alloc[device].push_back((void*)d_b);
-        alloc[device].push_back((void*)d_c);
-    }
+    cudaFreeAsync(d_a, 0);
+    cudaFreeAsync(d_b, 0);
+    cudaFreeAsync(d_c, 0);
 }
 
 void kernel::syncronize(const int device) {
     cudaSetDevice(device);
     cudaDeviceSynchronize();
-}
-
-void kernel::free(const int device) {
-    cudaSetDevice(device);
-    for (void* ptr : alloc[device]) {
-        cudaFree(ptr);
-    }
-    alloc[device].clear();
 }

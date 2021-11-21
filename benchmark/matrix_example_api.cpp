@@ -435,8 +435,6 @@ int main(int argc, char **argv)
 #endif
     }
 
-    kernel::init();
-
 
 #if COMPILE_TASKING
     fTimeStart=omp_get_wtime();
@@ -476,7 +474,6 @@ int main(int argc, char **argv)
 #endif
     }
     kernel::syncronize(0);
-    kernel::free(0);
 
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
