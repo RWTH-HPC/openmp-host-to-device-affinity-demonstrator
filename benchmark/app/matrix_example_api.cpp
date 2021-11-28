@@ -72,6 +72,10 @@
 #define USE_HUGE_PAGES 0
 #endif
 
+#ifndef GPU
+#define GPU 0
+#endif
+
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
 #define LOG(str) printf("%s\n", str)
 
@@ -98,9 +102,10 @@
 #include <algorithm>
 #include <functional>
 #include <omp.h>
-#include "util_string.h"
 
-#include "matrix.cuh"
+#include "../util/string.hpp"
+#include "../util/gpu_distance.hpp"
+#include "../cuda/matrix.cuh"
 
 #if CHECK_GENERATED_TASK_ID
 #include <mutex>
@@ -392,22 +397,20 @@ int main(int argc, char **argv)
         printf("Mode: Non-Uniform Task Distribution\n");
     }
 
-#if CHECK_GENERATED_TASK_ID
-    std::mutex mtx_t_ids;
-    std::list<int32_t> t_ids;
-#endif
     std::string msg = "will create "+std::to_string(numberOfTasks)+" tasks";
     LOG(msg.c_str());
+
+    // GPU distance initalization
+    distance::init();
+    int cuda_device_num = get_cuda_device_num();
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
     matrices_b = new double*[numberOfTasks];
     matrices_c = new double*[numberOfTasks];
 
-#if PARALLEL_INIT
     printf("Executing parallel init\n");
     #pragma omp parallel for
-#endif
     for(int i=0; i<numberOfTasks; i++) {
 
         int cur_size = matrixSize;
@@ -428,52 +431,27 @@ int main(int argc, char **argv)
             initialize_matrix_test_A(matrices_b[i], cur_size);
             initialize_matrix_zero(matrices_c[i], cur_size);
         }
-#if VERBOSE_MATRIX
-        printArray(matrices_a[i], "A", 10);
-        printArray(matrices_b[i], "B", 10);
-        printArray(matrices_c[i], "C", 10);
-#endif
     }
 
 
-#if COMPILE_TASKING
     fTimeStart=omp_get_wtime();
-    #pragma omp parallel
-    {
-#if ITERATIVE_VERSION
-        for(int iter = 0; iter < NUM_ITERATIONS; iter++) {
-            #pragma omp master
-            {
-                printf("Executing iteration %d ...\n", iter);
-            }
+    int target_gpu;
+#if (GPU == 0)
+    target_gpu = distance::get_gpu_index_by_distance(0);
+#elif(GPU == 1)
+    target_gpu = distance::get_gpu_index_by_distance(cuda_device_num - 1);
 #endif
-        #pragma omp for
-        for(int i=0; i<numberOfTasks; i++) {
-            int cur_size = matrixSize;
-            if(matrix_size_mode == matrix_size_mode_non_uniform) {
-                cur_size = non_uniform_full_array_matrix_sizes[i];
-            }
-#if VERBOSE_MSG
-            printf("OpenMP Tasking: MxM multiplication %03d working with matrix size %d\n", i, cur_size);
-#endif
-            // double *A = matrices_a[i];
-            // double *B = matrices_b[i];
-            // double *C = matrices_c[i];
-            // somehow target offloading is very slow when performing more that one iteration
-            // #pragma omp target map(from: C[0:cur_size*cur_size]) map(to:cur_size, A[0:cur_size*cur_size], B[0:cur_size*cur_size]) device(1001)
-            // uses normal tasks to have a fair comparison
-            #pragma omp task default(shared) firstprivate(i,cur_size)
-            {
-                //compute_matrix_matrix(matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
-                kernel::execute_matrix_multiply_kernel_async(matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 0);
-            }
+
+    for(int i=0; i<numberOfTasks; i++) {
+        int cur_size = matrixSize;
+        if(matrix_size_mode == matrix_size_mode_non_uniform) {
+            cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 
-#if ITERATIVE_VERSION
-        }
-#endif
+        kernel::execute_matrix_multiply_kernel(
+                matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
+                target_gpu);
     }
-    kernel::syncronize(0);
 
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
@@ -487,9 +465,6 @@ int main(int argc, char **argv)
             if(matrix_size_mode == matrix_size_mode_non_uniform) {
                 cur_size = non_uniform_full_array_matrix_sizes[t];
             }
-#if VERBOSE_MSG
-            printf("OpenMP Tasking: Validating resulting matrix %03d with matrix size %d\n", t, cur_size);
-#endif
             pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
         }
         if(pass)
@@ -497,7 +472,6 @@ int main(int argc, char **argv)
         else
             LOG("Validation: TEST FAILED");
     }
-#endif /* COMPILE_TASKING */
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {
