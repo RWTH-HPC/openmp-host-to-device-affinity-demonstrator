@@ -1,18 +1,15 @@
 #include "matrix.cuh"
-#include <vector>
-
-static std::vector<std::vector<void*>> alloc;
 
 __global__ void matrix_mutliply(
-        const double *a, const double *b, double *c) {
+        const double *a, const double *b, double *c, const unsigned int n) {
     __shared__ double res;
 
     if (threadIdx.x == 0)
         res = 0;
 
     double my_val = 
-        a[blockIdx.x * blockDim.x + threadIdx.x] * //a[bx][tx]
-        b[threadIdx.x * blockDim.x + blockIdx.y];  //b[tx][by]
+        a[blockIdx.x * n + threadIdx.x] * //a[bx][tx]
+        b[threadIdx.x * n + blockIdx.y];  //b[tx][by]
 
     __syncthreads();
 
@@ -24,16 +21,10 @@ __global__ void matrix_mutliply(
     }
 
     if (threadIdx.x == 0)
-        c[blockIdx.x * blockDim.x + blockIdx.y] = res; //c[bx][by]
+        c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]
 }
 
-void kernel::init() {
-    int count; 
-    cudaGetDeviceCount(&count);
-    alloc = std::vector<std::vector<void*>>(count);
-}
-
-void kernel::execute_matrix_multiply_kernel_async(const double *a, 
+void kernel::execute_matrix_multiply_kernel(const double *a, 
         const double *b, 
         double *c, 
         const unsigned int n,
@@ -56,23 +47,15 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
     cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
 
-    matrix_mutliply<<<blocks,threads>>>(d_a, d_b, d_c);
-    cudaMemcpyAsync(c, d_c, size, cudaMemcpyDeviceToHost);
+    matrix_mutliply<<<blocks,threads>>>(d_a, d_b, d_c, n);
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
 
-    alloc[device].push_back((void*)d_a);
-    alloc[device].push_back((void*)d_b);
-    alloc[device].push_back((void*)d_c);
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
 }
 
 void kernel::syncronize(const int device) {
     cudaSetDevice(device);
     cudaDeviceSynchronize();
-}
-
-void kernel::free(const int device) {
-    cudaSetDevice(device);
-    for (void* ptr : alloc[device]) {
-        cudaFree(ptr);
-    }
-    alloc[device].clear();
 }

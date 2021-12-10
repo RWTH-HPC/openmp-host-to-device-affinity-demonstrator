@@ -8,7 +8,7 @@
 #include "matrix.cuh"
 
 int main() {
-    const unsigned int N = 1000;
+    const unsigned int N = 2;
 
     int devices;
     cudaDeviceProp prop;
@@ -36,15 +36,10 @@ int main() {
         }
     }
 
-    kernel::init();
-    kernel::execute_matrix_multiply_kernel_async(a, b, c, N, 0);
-    kernel::execute_matrix_multiply_kernel_async(b, a, c2, N, 1);
-    kernel::syncronize(0);
-    kernel::syncronize(1);
-    kernel::free(0);
-    kernel::free(1);
+    kernel::execute_matrix_multiply_kernel(a, b, c, N, 0);
+    kernel::execute_matrix_multiply_kernel(b, a, c2, N, 1);
 
-    /*for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         std::cout << "[ ";
         for (int j = 0; j < N; j++) {
             std::cout << a[i*N+j] << " ";
@@ -60,6 +55,8 @@ int main() {
         std::cout << "]" << std::endl;
     }
 
+    std::cout << std::endl;
+
     for (int i = 0; i < N; i++) {
         std::cout << "[ ";
         for (int j = 0; j < N; j++) {
@@ -74,5 +71,5 @@ int main() {
             std::cout << c2[i*N+j] << " ";
         }
         std::cout << "]" << std::endl;
-    }*/
+    }
 }

@@ -401,8 +401,11 @@ int main(int argc, char **argv)
     LOG(msg.c_str());
 
     // GPU distance initalization
+    fTimeStart = omp_get_wtime();
     distance::init();
     int cuda_device_num = get_cuda_device_num();
+    fTimeEnd = omp_get_wtime();
+    std::cout << "GPU Distance Initalization took " << fTimeEnd-fTimeStart << std::endl;
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
@@ -435,28 +438,35 @@ int main(int argc, char **argv)
 
 
     fTimeStart=omp_get_wtime();
-    int target_gpu;
-#if (GPU == 0)
-    target_gpu = distance::get_gpu_index_by_distance(0);
-#elif(GPU == 1)
-    target_gpu = distance::get_gpu_index_by_distance(cuda_device_num - 1);
-#endif
 
+    #pragma omp parallel for
     for(int i=0; i<numberOfTasks; i++) {
         int cur_size = matrixSize;
         if(matrix_size_mode == matrix_size_mode_non_uniform) {
             cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 
-        kernel::execute_matrix_multiply_kernel(
-                matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                target_gpu);
+        #pragma omp task default(shared) firstprivate(i,cur_size)
+        {
+#if (GPU == 0)
+            int target_gpu = distance::get_gpu_index_by_distance(0);
+#elif(GPU == 1)
+            int target_gpu = distance::get_gpu_index_by_distance(cuda_device_num - 1);
+#endif
+            kernel::execute_matrix_multiply_kernel(
+                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
+                    target_gpu);
+        }
     }
 
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
+    for (int i = 0; i < cuda_device_num; i++) {
+        std::cout << "Device " << i << " memory time: " << kernel::get_memory_time(i) << std::endl;
+        std::cout << "Device " << i << " compute time: " << kernel::get_compute_time(i) << std::endl;
+    }
 
     pass = true;
     if(numberOfTasks>0) {
@@ -485,4 +495,4 @@ int main(int argc, char **argv)
     delete[] matrices_c;
 
     return 0;
-}
+    }
