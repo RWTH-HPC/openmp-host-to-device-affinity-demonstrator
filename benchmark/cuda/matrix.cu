@@ -6,7 +6,7 @@
 __global__ void matrix_mutliply(
         const double *a, const double *b, double *c, const unsigned int n) {
 
-    __shared__ double res;
+    /*__shared__ double res;
 
     if (threadIdx.x == 0)
         res = 0;
@@ -25,7 +25,7 @@ __global__ void matrix_mutliply(
     }
 
     if (threadIdx.x == 0)
-        c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]
+        c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]*/
 }
 
 static std::vector<double> dMemoryTime(2);

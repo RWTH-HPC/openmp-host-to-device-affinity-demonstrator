@@ -69,7 +69,7 @@
 #endif
 
 #ifndef USE_HUGE_PAGES
-#define USE_HUGE_PAGES 0
+#define USE_HUGE_PAGES 1
 #endif
 
 #ifndef GPU
@@ -469,19 +469,19 @@ int main(int argc, char **argv)
     }
 
     pass = true;
-    if(numberOfTasks>0) {
-        for(int t=0; t<numberOfTasks; t++) {
-            int cur_size = matrixSize;
-            if(matrix_size_mode == matrix_size_mode_non_uniform) {
-                cur_size = non_uniform_full_array_matrix_sizes[t];
-            }
-            pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
-        }
-        if(pass)
-            LOG("Validation: TEST SUCCESS");
-        else
-            LOG("Validation: TEST FAILED");
-    }
+    //if(numberOfTasks>0) {
+    //    for(int t=0; t<numberOfTasks; t++) {
+    //        int cur_size = matrixSize;
+    //        if(matrix_size_mode == matrix_size_mode_non_uniform) {
+    //            cur_size = non_uniform_full_array_matrix_sizes[t];
+    //        }
+    //        pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
+    //    }
+    //    if(pass)
+    //        LOG("Validation: TEST SUCCESS");
+    //    else
+    //        LOG("Validation: TEST FAILED");
+    //}
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {
