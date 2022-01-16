@@ -463,25 +463,21 @@ int main(int argc, char **argv)
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
-    for (int i = 0; i < cuda_device_num; i++) {
-        std::cout << "Device " << i << " memory time: " << kernel::get_memory_time(i) << std::endl;
-        std::cout << "Device " << i << " compute time: " << kernel::get_compute_time(i) << std::endl;
-    }
 
     pass = true;
-    //if(numberOfTasks>0) {
-    //    for(int t=0; t<numberOfTasks; t++) {
-    //        int cur_size = matrixSize;
-    //        if(matrix_size_mode == matrix_size_mode_non_uniform) {
-    //            cur_size = non_uniform_full_array_matrix_sizes[t];
-    //        }
-    //        pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
-    //    }
-    //    if(pass)
-    //        LOG("Validation: TEST SUCCESS");
-    //    else
-    //        LOG("Validation: TEST FAILED");
-    //}
+    if(numberOfTasks>0) {
+        for(int t=0; t<numberOfTasks; t++) {
+            int cur_size = matrixSize;
+            if(matrix_size_mode == matrix_size_mode_non_uniform) {
+                cur_size = non_uniform_full_array_matrix_sizes[t];
+            }
+            pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
+        }
+        if(pass)
+            LOG("Validation: TEST SUCCESS");
+        else
+            LOG("Validation: TEST FAILED");
+    }
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {

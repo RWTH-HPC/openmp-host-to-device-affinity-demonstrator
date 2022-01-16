@@ -6,7 +6,7 @@
 __global__ void matrix_mutliply(
         const double *a, const double *b, double *c, const unsigned int n) {
 
-    /*__shared__ double res;
+    __shared__ double res;
 
     if (threadIdx.x == 0)
         res = 0;
@@ -25,11 +25,8 @@ __global__ void matrix_mutliply(
     }
 
     if (threadIdx.x == 0)
-        c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]*/
+        c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]
 }
-
-static std::vector<double> dMemoryTime(2);
-static std::vector<double> dComputeTime(2);
 
 void kernel::execute_matrix_multiply_kernel(const double *a, 
         const double *b, 
@@ -47,8 +44,6 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
 
     int size = sizeof(double) * n*n;
 
-    double dMemoryStart = omp_get_wtime();
-
     cudaMalloc((void **)&d_a, size);
     cudaMalloc((void **)&d_b, size);
     cudaMalloc((void **)&d_c, size);
@@ -56,38 +51,16 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
     cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
 
-    double dComputeStart = omp_get_wtime();
-
     matrix_mutliply<<<blocks,threads>>>(d_a, d_b, d_c, n);
-    // Kernels are computed asyncronously
-    kernel::syncronize(device);
-
-    double dComputeEnd = omp_get_wtime();
 
     cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
 
     cudaFree(d_a);
     cudaFree(d_b);
     cudaFree(d_c);
-
-    double dMemoryEnd = omp_get_wtime();
-
-    #pragma omp critical
-    {
-        dComputeTime[device] += dComputeEnd - dComputeStart;
-        dMemoryTime[device] += dMemoryEnd - dMemoryStart - (dComputeEnd - dComputeStart);
-    }
 }
 
 void kernel::syncronize(const int device) {
     cudaSetDevice(device);
     cudaDeviceSynchronize();
-}
-
-double kernel::get_memory_time(const int device) {
-    return dMemoryTime[device];
-}
-
-double kernel::get_compute_time(const int device) {
-    return dComputeTime[device];
 }
