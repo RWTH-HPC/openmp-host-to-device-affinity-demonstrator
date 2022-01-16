@@ -76,6 +76,10 @@
 #define GPU 0
 #endif
 
+#ifndef COMPUTE
+#define COMPUTE 1
+#endif
+
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
 #define LOG(str) printf("%s\n", str)
 
@@ -397,6 +401,12 @@ int main(int argc, char **argv)
         printf("Mode: Non-Uniform Task Distribution\n");
     }
 
+#if (COMPUTE == 1)
+    LOG("Computation activated, memory and computation performance is measured");
+#elif (COMPUTE == 0)
+    LOG("Computation deactivated, only memory performance is measured");
+#endif
+
     std::string msg = "will create "+std::to_string(numberOfTasks)+" tasks";
     LOG(msg.c_str());
 
@@ -464,6 +474,7 @@ int main(int argc, char **argv)
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
 
+#if (COMPUTE == 1)
     pass = true;
     if(numberOfTasks>0) {
         for(int t=0; t<numberOfTasks; t++) {
@@ -478,6 +489,9 @@ int main(int argc, char **argv)
         else
             LOG("Validation: TEST FAILED");
     }
+#elif (COMPUTE == 0)
+    LOG("Validation skipped");
+#endif
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {

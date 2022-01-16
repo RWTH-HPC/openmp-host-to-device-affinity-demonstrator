@@ -5,7 +5,7 @@
 
 __global__ void matrix_mutliply(
         const double *a, const double *b, double *c, const unsigned int n) {
-
+#if (COMPUTE == 1)
     __shared__ double res;
 
     if (threadIdx.x == 0)
@@ -26,6 +26,7 @@ __global__ void matrix_mutliply(
 
     if (threadIdx.x == 0)
         c[blockIdx.x * n + blockIdx.y] = res; //c[bx][by]
+#endif
 }
 
 void kernel::execute_matrix_multiply_kernel(const double *a, 
