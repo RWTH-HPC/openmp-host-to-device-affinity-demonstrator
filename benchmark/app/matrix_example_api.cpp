@@ -352,6 +352,14 @@ int main(int argc, char **argv)
         }
     }
 
+    std::vector<double> threadtimes(omp_get_max_threads());
+    std::vector<unsigned int> thread_gpu(omp_get_max_threads());
+#if (GPU == 0)
+    unsigned int target_index = 0;
+#elif (GPU == 1)
+    unsigned int target_index = cuda_device_num - 1;
+#endif
+
     fTimeStart=omp_get_wtime();
 
     #pragma omp parallel for
@@ -363,14 +371,15 @@ int main(int argc, char **argv)
 
         #pragma omp task default(shared) firstprivate(i,cur_size)
         {
-#if (GPU == 0)
-            int target_gpu = distance::get_gpu_index_by_distance(0);
-#elif(GPU == 1)
-            int target_gpu = distance::get_gpu_index_by_distance(cuda_device_num - 1);
-#endif
+            int target_gpu = distance::get_gpu_index_by_distance(target_index);
+            double t0 = omp_get_wtime();
             kernel::execute_matrix_multiply_kernel(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
                     target_gpu);
+            double t1 = omp_get_wtime();
+
+            threadtimes[omp_get_thread_num()] += t1 - t0;
+            thread_gpu[omp_get_thread_num()] = distance::get_gpu_index_by_distance(target_index);
         }
     }
 
@@ -378,6 +387,9 @@ int main(int argc, char **argv)
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
+    for (int i = 0; i < omp_get_max_threads(); i++) {
+        printf("Thread %d on GPU%d: %f\n", i, thread_gpu[i], threadtimes[i]);
+    }
 
 #if (COMPUTE == 1)
     pass = true;
@@ -397,6 +409,7 @@ int main(int argc, char **argv)
 #elif (COMPUTE == 0)
     LOG("Validation skipped");
 #endif
+
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {
