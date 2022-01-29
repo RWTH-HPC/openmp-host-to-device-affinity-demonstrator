@@ -5,8 +5,10 @@ set_target_properties(hwloc_local PROPERTIES
 
 set(SOURCE_FILES
     string.hpp
-    gpu_distance.hpp
-    gpu_distance.cpp)
+    cuda_device_distance.hpp
+    cuda_device_distance.cpp
+    system_info.hpp
+    system_info.cpp)
 
 add_library(distanceBenchmark_util ${SOURCE_FILES})
 target_link_libraries(distanceBenchmark_util hwloc_local numa)

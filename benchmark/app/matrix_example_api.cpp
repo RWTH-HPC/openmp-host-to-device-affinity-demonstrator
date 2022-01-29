@@ -22,7 +22,8 @@
 #include <omp.h>
 
 #include "../util/string.hpp"
-#include "../util/gpu_distance.hpp"
+#include "../util/cuda_device_distance.hpp"
+#include "../util/system_info.hpp"
 #include "../cuda/matrix.cuh"
 
 #if CHECK_GENERATED_TASK_ID
@@ -318,10 +319,18 @@ int main(int argc, char **argv)
 
     // GPU distance initalization
     fTimeStart = omp_get_wtime();
-    distance::init();
-    int cuda_device_num = get_cuda_device_num();
+    int err = distance::init();
     fTimeEnd = omp_get_wtime();
-    std::cout << "GPU Distance Initalization took " << fTimeEnd-fTimeStart << std::endl;
+    if (err == -1) {
+        std::cout << "Error: NUMA is not available on this system" << std::endl;
+        return -1;
+    } else if (err == -2) {
+        std::cout << "Error: No CUDA devices where found on this system" << std::endl;
+        return -2;
+    }
+    std::cout << "CUDA device distance initalization was successful and took " << fTimeEnd-fTimeStart << std::endl;
+
+    unsigned int num_cuda_devices = system_info::get_num_cuda_devices();
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
@@ -352,12 +361,10 @@ int main(int argc, char **argv)
         }
     }
 
-    std::vector<double> threadtimes(omp_get_max_threads());
-    std::vector<unsigned int> thread_gpu(omp_get_max_threads());
 #if (GPU == 0)
-    unsigned int target_index = 0;
+    unsigned int target_distance_index = 0;
 #elif (GPU == 1)
-    unsigned int target_index = cuda_device_num - 1;
+    unsigned int target_distance_index = num_cuda_devices - 1;
 #endif
 
     fTimeStart=omp_get_wtime();
@@ -371,15 +378,13 @@ int main(int argc, char **argv)
 
         #pragma omp task default(shared) firstprivate(i,cur_size)
         {
-            int target_gpu = distance::get_gpu_index_by_distance(target_index);
-            double t0 = omp_get_wtime();
+            unsigned int cpu, numa;
+            system_info::get_current_cpu(cpu, numa);
+
+            int target_cuda_index = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
             kernel::execute_matrix_multiply_kernel(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    target_gpu);
-            double t1 = omp_get_wtime();
-
-            threadtimes[omp_get_thread_num()] += t1 - t0;
-            thread_gpu[omp_get_thread_num()] = distance::get_gpu_index_by_distance(target_index);
+                    target_cuda_index);
         }
     }
 
@@ -387,9 +392,6 @@ int main(int argc, char **argv)
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
-    for (int i = 0; i < omp_get_max_threads(); i++) {
-        printf("Thread %d on GPU%d: %f\n", i, thread_gpu[i], threadtimes[i]);
-    }
 
 #if (COMPUTE == 1)
     pass = true;

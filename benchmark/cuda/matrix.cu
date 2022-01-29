@@ -1,7 +1,7 @@
 #include "../util/define.hpp"
 
 #include "matrix.cuh"
-#include "../util/gpu_distance.hpp"
+#include <cstddef>
 #include <vector>
 #include <omp.h>
 
@@ -42,7 +42,6 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
     dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
     dim3 blocks((n+BLOCK_SIZE-1)/BLOCK_SIZE, (n+BLOCK_SIZE-1)/BLOCK_SIZE);
 #endif
-
     double *d_a;
     double *d_b;
     double *d_c;
@@ -53,11 +52,12 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
     cudaMalloc((void **)&d_b, size);
     cudaMalloc((void **)&d_c, size);
 
+
     cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
 
 #if (COMPUTE == 1)
-    matrix_mutliply<<<blocks,threads_per_block>>>(d_a, d_b, d_c, n);
+    matrix_mutliply<<<blocks,threads_per_block, 0>>>(d_a, d_b, d_c, n);
 #endif
 
     cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
@@ -65,9 +65,18 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
     cudaFree(d_a);
     cudaFree(d_b);
     cudaFree(d_c);
+
 }
 
 void kernel::syncronize(const int device) {
     cudaSetDevice(device);
     cudaDeviceSynchronize();
+}
+
+void kernel::pin(void *data, size_t size) {
+    cudaHostRegister(data, size, cudaHostRegisterDefault);
+}
+
+void kernel::unpin(void *data) {
+    cudaHostUnregister(data);
 }
