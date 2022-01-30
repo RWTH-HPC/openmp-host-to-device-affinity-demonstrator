@@ -68,13 +68,58 @@ void kernel::execute_matrix_multiply_kernel(const double *a,
 
 }
 
+void kernel::execute_matrix_multiply_kernel_async(const double *a, 
+        const double *b, 
+        double *c, 
+        const unsigned int n,
+        const int device) {
+
+    cudaSetDevice(device);
+#if (COMPUTE == 1)
+    dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 blocks((n+BLOCK_SIZE-1)/BLOCK_SIZE, (n+BLOCK_SIZE-1)/BLOCK_SIZE);
+#endif
+    double *d_a;
+    double *d_b;
+    double *d_c;
+
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
+
+    int size = sizeof(double) * n*n;
+
+    cudaMallocAsync((void **)&d_a, size, stream);
+    cudaMallocAsync((void **)&d_b, size, stream);
+    cudaMallocAsync((void **)&d_c, size, stream);
+
+
+    cudaMemcpyAsync(d_a, a, size, cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(d_b, b, size, cudaMemcpyHostToDevice, stream);
+
+#if (COMPUTE == 1)
+    matrix_mutliply<<<blocks,threads_per_block, 0, stream>>>(d_a, d_b, d_c, n);
+#endif
+
+    cudaMemcpyAsync(c, d_c, size, cudaMemcpyDeviceToHost, stream);
+
+    cudaFreeAsync(d_a, stream);
+    cudaFreeAsync(d_b, stream);
+    cudaFreeAsync(d_c, stream);
+
+    cudaStreamDestroy(stream);
+}
+
 void kernel::syncronize(const int device) {
     cudaSetDevice(device);
     cudaDeviceSynchronize();
 }
 
-void kernel::pin(void *data, size_t size) {
-    cudaHostRegister(data, size, cudaHostRegisterDefault);
+void kernel::pin(void *data, size_t size, bool readonly, const int device) {
+    cudaSetDevice(device);
+    if (readonly)
+        cudaHostRegister(data, size, cudaHostRegisterReadOnly);
+    else
+        cudaHostRegister(data, size, cudaHostRegisterDefault);
 }
 
 void kernel::unpin(void *data) {

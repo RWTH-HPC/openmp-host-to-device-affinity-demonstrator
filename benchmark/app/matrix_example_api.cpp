@@ -314,8 +314,9 @@ int main(int argc, char **argv)
     LOG("Computation deactivated, only memory performance is measured");
 #endif
 
-    std::string msg = "will create "+std::to_string(numberOfTasks)+" tasks";
-    LOG(msg.c_str());
+    std::cout << "Will create "+std::to_string(numberOfTasks)+" tasks" << std::endl;
+    if (numberOfTasks % omp_get_max_threads() != 0)
+        std::cout << "Warning: Number of tasks not evenly dividable by number of threads, threads will have different workloads" << std::endl;
 
     // GPU distance initalization
     fTimeStart = omp_get_wtime();
@@ -361,11 +362,22 @@ int main(int argc, char **argv)
         }
     }
 
+    std::vector<double> thread_waiting_time(omp_get_max_threads());
+    std::vector<unsigned int> thread_gpu(omp_get_max_threads());
+
+
 #if (GPU == 0)
     unsigned int target_distance_index = 0;
 #elif (GPU == 1)
     unsigned int target_distance_index = num_cuda_devices - 1;
 #endif
+
+    #pragma omp parallel
+    {
+        unsigned int cpu, numa;
+        system_info::get_current_cpu(cpu, numa);
+        thread_gpu[omp_get_thread_num()] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+    }
 
     fTimeStart=omp_get_wtime();
 
@@ -376,15 +388,22 @@ int main(int argc, char **argv)
             cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 
+
         #pragma omp task default(shared) firstprivate(i,cur_size)
         {
-            unsigned int cpu, numa;
-            system_info::get_current_cpu(cpu, numa);
 
-            int target_cuda_index = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+            double t0 = omp_get_wtime();
+#if (ASYNC == 0)
             kernel::execute_matrix_multiply_kernel(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    target_cuda_index);
+                    thread_gpu[omp_get_thread_num()]);
+#elif (ASYNC == 1)
+            kernel::execute_matrix_multiply_kernel_async(
+                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
+                    thread_gpu[omp_get_thread_num()]);
+#endif
+            thread_waiting_time[omp_get_thread_num()] += omp_get_wtime() - t0;
+
         }
     }
 
@@ -392,6 +411,11 @@ int main(int argc, char **argv)
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
+    for (int i = 0; i < omp_get_max_threads(); i++) {
+        std::cout << "Waiting times of thread " << i << " on GPU" << thread_gpu[i] << ": " << thread_waiting_time[i] << std::endl;
+    }
+    const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
+    std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
 
 #if (COMPUTE == 1)
     pass = true;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(distanceBenchmark LANGUAGES CXX CUDA)
-set(CMAKE_CXX_STANDARD 11)
-set(EXTRA_FLAGS "-DCOMPUTE=1")
+set(CMAKE_CXX_STANDARD 17)
+set(EXTRA_FLAGS "-DCOMPUTE=0 -DASYNC=1")
 
 find_package(OpenMP)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${EXTRA_FLAGS}")

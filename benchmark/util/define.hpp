@@ -80,6 +80,10 @@
 #define COMPUTE 1
 #endif
 
+#ifndef ASYNC
+#define ASYNC 0
+#endif
+
 #ifndef BLOCK_SIZE
 #define BLOCK_SIZE 32
 #endif
