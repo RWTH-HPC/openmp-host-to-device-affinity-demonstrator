@@ -1,0 +1,78 @@
+{
+    "name" : "thread_benchmark",
+    "repetitions" : 2,
+    "tests" : [
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 2,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 4,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 6,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 8,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 10,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 14,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 16,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 18,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 20,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 22,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 24,
+            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+            "parameters" : "1024 24"
+        }
+    ]
+}
