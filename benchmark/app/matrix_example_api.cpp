@@ -30,8 +30,6 @@
 #include <mutex>
 #endif
 
-
-
 typedef enum matrix_size_mode_t {
     matrix_size_mode_normal = 0,
     matrix_size_mode_non_uniform = 1
@@ -96,20 +94,6 @@ void initialize_matrix_test_A(double *mat, int matrixSize) {
     }
 }
 
-void compute_matrix_matrix(double * SPEC_RESTRICT a, double * SPEC_RESTRICT b, double * SPEC_RESTRICT c, int matrixSize) {
-    // make the tasks more computational expensive by repeating this operation several times to better see effects
-    for(int iter=0;iter<NUM_REPETITIONS;iter++) {
-        for(int i=0;i<matrixSize;i++) {
-            for(int j=0;j<matrixSize;j++) {
-                c[i*matrixSize+j]=0;
-                for(int k=0;k<matrixSize;k++) {
-                    c[i*matrixSize+j] += a[i*matrixSize+k] * b[k*matrixSize+j];
-                }
-            }
-        }
-    }
-}
-
 bool check_test_matrix(double *c, int matrix_idx, double val, int matrixSize) {
     if (NUM_REPETITIONS > 0) {
         for(int i=0;i<matrixSize;i++) {
@@ -158,30 +142,6 @@ void printHelpMessage() {
     std::cout << "        matrixSizes:  Comma separated list of different matrix sizes for non-uniform task creation" << std::endl;
     std::cout << "        numberTasks:  Comma separated list defining number of tasks for each matrix size" << std::endl;
     std::cout << "        order_(i):    Ordering of tasks using matrix sizes for rank/process i; 0=\"high to low\" (default); 1=\"low to high\"" << std::endl << std::endl;
-}
-
-void printArray(double * SPEC_RESTRICT array, char* arr_name, int n) {
-    printf("(OS_TID:%ld): %s[0-%d] at (" DPxMOD "): ", syscall(SYS_gettid), arr_name, n, DPxPTR(&array[0]));
-    for(int i = 0; i < n; i++) {
-        printf("%f ", array[i]);
-    }
-    printf("\n");
-}
-
-void matrixMatrixKernel(double * SPEC_RESTRICT A, double * SPEC_RESTRICT B, double * SPEC_RESTRICT C, int matrixSize, int i) {
-#if VERBOSE_MATRIX
-    printArray(A, "A", 10);
-    printArray(B, "B", 10);
-    printArray(C, "C", 10);
-#endif
-
-#if SIMULATE_CONST_WORK
-    // simulate work by just touching the arrays and wait for 50 ms here
-    C[matrixSize] = A[matrixSize] * B[matrixSize];
-    usleep(50000);
-#else
-    compute_matrix_matrix(A, B, C, matrixSize);
-#endif
 }
 
 int parse_command_line_args(int argc, char **argv) {
@@ -332,6 +292,7 @@ int main(int argc, char **argv)
     std::cout << "CUDA device distance initalization was successful and took " << fTimeEnd-fTimeStart << std::endl;
 
     unsigned int num_cuda_devices = system_info::get_num_cuda_devices();
+    std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
@@ -339,7 +300,7 @@ int main(int argc, char **argv)
     matrices_c = new double*[numberOfTasks];
 
     printf("Executing parallel init\n");
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for(int i=0; i<numberOfTasks; i++) {
 
         int cur_size = matrixSize;
@@ -362,8 +323,8 @@ int main(int argc, char **argv)
         }
     }
 
-    std::vector<double> thread_waiting_time(omp_get_max_threads());
-    std::vector<unsigned int> thread_gpu(omp_get_max_threads());
+    std::vector<double> thread_waiting_time(omp_get_max_threads()*32);
+    std::vector<unsigned int> thread_gpu(omp_get_max_threads()*32);
 
 
 #if (GPU == 0)
@@ -376,35 +337,34 @@ int main(int argc, char **argv)
     {
         unsigned int cpu, numa;
         system_info::get_current_cpu(cpu, numa);
-        thread_gpu[omp_get_thread_num()] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+        thread_gpu[omp_get_thread_num()*32] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
     }
 
     fTimeStart=omp_get_wtime();
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for(int i=0; i<numberOfTasks; i++) {
         int cur_size = matrixSize;
         if(matrix_size_mode == matrix_size_mode_non_uniform) {
             cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 
-
-        #pragma omp task default(shared) firstprivate(i,cur_size)
-        {
-
+        // Currently not necessary to create tasks and make sure that 
+        // iteration is really executed by desired thread
+        // #pragma omp task default(shared) firstprivate(i,cur_size)
+        // {
             double t0 = omp_get_wtime();
 #if (ASYNC == 0)
             kernel::execute_matrix_multiply_kernel(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    thread_gpu[omp_get_thread_num()]);
+                    thread_gpu[omp_get_thread_num()*32]);
 #elif (ASYNC == 1)
             kernel::execute_matrix_multiply_kernel_async(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    thread_gpu[omp_get_thread_num()]);
+                    thread_gpu[omp_get_thread_num()*32]);
 #endif
-            thread_waiting_time[omp_get_thread_num()] += omp_get_wtime() - t0;
-
-        }
+            thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
+        // }
     }
 
     fTimeEnd=omp_get_wtime();
@@ -412,8 +372,9 @@ int main(int argc, char **argv)
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
     for (int i = 0; i < omp_get_max_threads(); i++) {
-        std::cout << "Waiting times of thread " << i << " on GPU" << thread_gpu[i] << ": " << thread_waiting_time[i] << std::endl;
+        std::cout << "Waiting times of thread " << i << " on GPU" << thread_gpu[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }
+    // TODO: fix min max calculation when working with padded array
     const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
     std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
 

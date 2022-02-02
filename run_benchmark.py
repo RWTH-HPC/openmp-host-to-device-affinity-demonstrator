@@ -19,7 +19,7 @@ def main():
     #generate data
 
     for test in config["tests"]:
-        test_output_name = "_".join([str(test[key]) for key in test.keys() if not key == "OMP_PLACES"])
+        test_output_name = "_".join([str(test[key]).replace(" ", "-") for key in test.keys() if not key == "OMP_PLACES"])
         best_output = b""
         worst_output = b""
 
@@ -28,8 +28,8 @@ def main():
         for i in range(config["repetitions"]):
             print(i, end=" ")
             sys.stdout.flush()
-            cmd_best = ["benchmark/build/app/distanceBenchmark_best"] + test["parameters"].split(" ")
-            cmd_worst = ["benchmark/build/app/distanceBenchmark_worst"] + test["parameters"].split(" ")
+            cmd_best = ["no_numa_balancing"] + ["benchmark/build/app/distanceBenchmark_best"] + test["parameters"].split(" ")
+            cmd_worst = ["no_numa_balancing"] + ["benchmark/build/app/distanceBenchmark_worst"] + test["parameters"].split(" ")
             env = os.environ
             for key in test.keys():
                 if "OMP" in key:

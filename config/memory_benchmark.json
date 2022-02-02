@@ -5,44 +5,50 @@
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "2048 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "32 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "4096 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "2048 36"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "6144 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "4096 36"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "8192 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "6144 36"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "10240 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "8192 36"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "12288 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "10240 36"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
-            "parameters" : "14336 12"
+            "OMP_PLACES" : "cores",
+            "parameters" : "12288 36"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES" : "cores",
+            "parameters" : "14336 36"
         }
     ]
 }
