@@ -5,6 +5,7 @@
 #include <vector>
 #include <omp.h>
 
+static std::vector<cudaStream_t> streams;
 
 __global__ void matrix_mutliply(
         const double *a, const double *b, double *c, const unsigned int n) {
@@ -29,6 +30,13 @@ __global__ void matrix_mutliply(
         }
         c[idy*n+idx] = tmp;
     }
+
+    //int64_t cycles = 0;
+    //int64_t start = clock64();
+    //while(cycles < 1480500 * 1000) {
+    //    cycles = clock64() - start;
+    //}
+
 }
 
 void kernel::execute_matrix_multiply_kernel(const double *a, 
@@ -72,6 +80,7 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
         const double *b, 
         double *c, 
         const unsigned int n,
+        const int stream_id,
         const int device) {
 
     cudaSetDevice(device);
@@ -83,10 +92,12 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
     double *d_b;
     double *d_c;
 
+    int size = sizeof(double) * n*n;
+
     cudaStream_t stream;
     cudaStreamCreate(&stream);
+    streams.push_back(stream);
 
-    int size = sizeof(double) * n*n;
 
     cudaMallocAsync((void **)&d_a, size, stream);
     cudaMallocAsync((void **)&d_b, size, stream);
@@ -97,7 +108,7 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
     cudaMemcpyAsync(d_b, b, size, cudaMemcpyHostToDevice, stream);
 
 #if (COMPUTE == 1)
-    matrix_mutliply<<<blocks,threads_per_block, 0, stream>>>(d_a, d_b, d_c, n);
+    matrix_mutliply<<<blocks, threads_per_block, 0, stream>>>(d_a, d_b, d_c, n);
 #endif
 
     cudaMemcpyAsync(c, d_c, size, cudaMemcpyDeviceToHost, stream);
@@ -105,8 +116,23 @@ void kernel::execute_matrix_multiply_kernel_async(const double *a,
     cudaFreeAsync(d_a, stream);
     cudaFreeAsync(d_b, stream);
     cudaFreeAsync(d_c, stream);
+}
 
-    cudaStreamDestroy(stream);
+void kernel::create_streams(const int num_streams) {
+    streams.reserve(num_streams);
+    /*cudaStream_t cur;
+    for (int i = 0; i < num_streams; i++) {
+        cudaStreamCreate(&cur);
+        streams.push_back(cur);
+    }*/
+}
+
+void kernel::destroy_streams() {
+    for (auto stream : streams) {
+        cudaStreamSynchronize(stream);
+        cudaStreamDestroy(stream);
+    }
+    streams.clear();
 }
 
 void kernel::syncronize(const int device) {

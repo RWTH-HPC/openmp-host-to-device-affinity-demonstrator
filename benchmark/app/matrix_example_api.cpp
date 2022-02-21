@@ -293,6 +293,7 @@ int main(int argc, char **argv)
 
     unsigned int num_cuda_devices = system_info::get_num_cuda_devices();
     std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
+    system_info::get_cuda_device_info(0);
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
@@ -340,7 +341,11 @@ int main(int argc, char **argv)
         thread_gpu[omp_get_thread_num()*32] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
     }
 
+
     fTimeStart=omp_get_wtime();
+#if (ASYNC == 1)
+    kernel::create_streams(numberOfTasks);
+#endif
 
     #pragma omp parallel for schedule(static)
     for(int i=0; i<numberOfTasks; i++) {
@@ -359,14 +364,24 @@ int main(int argc, char **argv)
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
                     thread_gpu[omp_get_thread_num()*32]);
 #elif (ASYNC == 1)
+            //kernel::pin(matrices_a[i], sizeof(double)*cur_size*cur_size, true, thread_gpu[omp_get_thread_num()*32]);
+            //kernel::pin(matrices_b[i], sizeof(double)*cur_size*cur_size, true, thread_gpu[omp_get_thread_num()*32]);
+            //kernel::pin(matrices_c[i], sizeof(double)*cur_size*cur_size, false, thread_gpu[omp_get_thread_num()*32]);
             kernel::execute_matrix_multiply_kernel_async(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
+                    i,
                     thread_gpu[omp_get_thread_num()*32]);
+            //kernel::unpin(matrices_a[i]);
+            //kernel::unpin(matrices_b[i]);
+            //kernel::unpin(matrices_c[i]);
 #endif
             thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
         // }
     }
 
+#if (ASYNC == 1)
+    kernel::destroy_streams();
+#endif
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
