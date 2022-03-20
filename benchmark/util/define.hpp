@@ -85,7 +85,11 @@
 #endif
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 2
+#endif
+
+#ifndef PINNED_MEMORY
+#define PINNED_MEMORY 1
 #endif
 
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
@@ -101,4 +105,3 @@
 #ifndef DPxPTR
 #define DPxPTR(ptr) ((int)(2*sizeof(uintptr_t))), ((uintptr_t) (ptr))
 #endif
-

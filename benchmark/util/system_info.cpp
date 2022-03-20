@@ -42,4 +42,5 @@ void system_info::get_cuda_device_info(unsigned int device) {
     std::cout << "maxThreadsPerMultiProcessor " << props.maxThreadsPerMultiProcessor << std::endl;
     std::cout << "multiProcessorCount " << props.multiProcessorCount << std::endl;
     std::cout << "name[256] " << props.name << std::endl;
+    std::cout << "unifiedAddressing " << props.unifiedAddressing << std::endl;
 }

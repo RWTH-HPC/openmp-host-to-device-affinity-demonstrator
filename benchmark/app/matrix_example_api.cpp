@@ -295,35 +295,6 @@ int main(int argc, char **argv)
     std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
     system_info::get_cuda_device_info(0);
 
-    double **matrices_a, **matrices_b, **matrices_c;
-    matrices_a = new double*[numberOfTasks];
-    matrices_b = new double*[numberOfTasks];
-    matrices_c = new double*[numberOfTasks];
-
-    printf("Executing parallel init\n");
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<numberOfTasks; i++) {
-
-        int cur_size = matrixSize;
-        if(matrix_size_mode == matrix_size_mode_non_uniform) {
-            cur_size = non_uniform_full_array_matrix_sizes[i];
-        }
-
-        matrices_a[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
-        matrices_b[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
-        matrices_c[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
-        if(RANDOMINIT) {
-            initialize_matrix_rnd(matrices_a[i], cur_size);
-            initialize_matrix_rnd(matrices_b[i], cur_size);
-            initialize_matrix_zero(matrices_c[i], cur_size);
-        }
-        else {
-            initialize_matrix_test_A(matrices_a[i], cur_size);
-            initialize_matrix_test_A(matrices_b[i], cur_size);
-            initialize_matrix_zero(matrices_c[i], cur_size);
-        }
-    }
-
     std::vector<double> thread_waiting_time(omp_get_max_threads()*32);
     std::vector<unsigned int> thread_gpu(omp_get_max_threads()*32);
 
@@ -342,9 +313,49 @@ int main(int argc, char **argv)
     }
 
 
+    double **matrices_a, **matrices_b, **matrices_c;
+    matrices_a = new double*[numberOfTasks];
+    matrices_b = new double*[numberOfTasks];
+    matrices_c = new double*[numberOfTasks];
+
+    printf("Executing parallel init\n");
+    fTimeStart=omp_get_wtime();
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<numberOfTasks; i++) {
+
+        int cur_size = matrixSize;
+        if(matrix_size_mode == matrix_size_mode_non_uniform) {
+            cur_size = non_uniform_full_array_matrix_sizes[i];
+        }
+#if (PINNED_MEMORY == 0)
+        matrices_a[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
+        matrices_b[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
+        matrices_c[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
+#else
+        matrices_a[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
+        matrices_b[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
+        matrices_c[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
+#endif
+        if(RANDOMINIT) {
+            initialize_matrix_rnd(matrices_a[i], cur_size);
+            initialize_matrix_rnd(matrices_b[i], cur_size);
+            initialize_matrix_zero(matrices_c[i], cur_size);
+        }
+        else {
+            initialize_matrix_test_A(matrices_a[i], cur_size);
+            initialize_matrix_test_A(matrices_b[i], cur_size);
+            initialize_matrix_zero(matrices_c[i], cur_size);
+        }
+    }
+    double memory_allocation_time = omp_get_wtime()-fTimeStart;
+    std::cout << "Memory Allocation duration: " << memory_allocation_time << std::endl;
+
+
     fTimeStart=omp_get_wtime();
 #if (ASYNC == 1)
-    kernel::create_streams(numberOfTasks);
+    kernel::initStreams(omp_get_max_threads());
+    for (int i = 0; i < omp_get_max_threads(); i++)
+        kernel::createStream(i, thread_gpu[i*32]);
 #endif
 
     #pragma omp parallel for schedule(static)
@@ -364,34 +375,30 @@ int main(int argc, char **argv)
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
                     thread_gpu[omp_get_thread_num()*32]);
 #elif (ASYNC == 1)
-            //kernel::pin(matrices_a[i], sizeof(double)*cur_size*cur_size, true, thread_gpu[omp_get_thread_num()*32]);
-            //kernel::pin(matrices_b[i], sizeof(double)*cur_size*cur_size, true, thread_gpu[omp_get_thread_num()*32]);
-            //kernel::pin(matrices_c[i], sizeof(double)*cur_size*cur_size, false, thread_gpu[omp_get_thread_num()*32]);
             kernel::execute_matrix_multiply_kernel_async(
                     matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    i,
+                    omp_get_thread_num(),
                     thread_gpu[omp_get_thread_num()*32]);
-            //kernel::unpin(matrices_a[i]);
-            //kernel::unpin(matrices_b[i]);
-            //kernel::unpin(matrices_c[i]);
 #endif
             thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
         // }
     }
 
 #if (ASYNC == 1)
-    kernel::destroy_streams();
+    for (int i = 0; i < omp_get_max_threads(); i++)
+        kernel::syncronizeStream(i);
 #endif
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
     for (int i = 0; i < omp_get_max_threads(); i++) {
-        std::cout << "Waiting times of thread " << i << " on GPU" << thread_gpu[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
+        std::cout << "Invocation latency of thread " << i << " on GPU" << thread_gpu[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }
     // TODO: fix min max calculation when working with padded array
     const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
     std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
+
 
 #if (COMPUTE == 1)
     pass = true;
@@ -401,6 +408,23 @@ int main(int argc, char **argv)
             if(matrix_size_mode == matrix_size_mode_non_uniform) {
                 cur_size = non_uniform_full_array_matrix_sizes[t];
             }
+
+            /*for (int i = 0; i < cur_size; i++) {
+                std::cout << "[ ";
+                for (int j = 0; j < cur_size; j++) {
+                    std::cout << matrices_a[t][i*cur_size+j] << " ";
+                }
+                std::cout << "] * [ ";
+                for (int j = 0; j < cur_size; j++) {
+                    std::cout << matrices_b[t][i*cur_size+j] << " ";
+                }
+                std::cout << "] = [ ";
+                for (int j = 0; j < cur_size; j++) {
+                    std::cout << matrices_c[t][i*cur_size+j] << " ";
+                }
+                std::cout << "]" << std::endl;
+            }*/
+
             pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
         }
         if(pass)
@@ -415,9 +439,15 @@ int main(int argc, char **argv)
 
     //deallocate matrices
     for(int i=0; i<numberOfTasks; i++) {
+#if (PINNED_MEMORY == 0)
         free(matrices_a[i]);
         free(matrices_b[i]);
         free(matrices_c[i]);
+#else
+        kernel::hostPinnedFree(matrices_a[i]);
+        kernel::hostPinnedFree(matrices_b[i]);
+        kernel::hostPinnedFree(matrices_c[i]);
+#endif 
     }
 
     delete[] matrices_a;
@@ -425,4 +455,4 @@ int main(int argc, char **argv)
     delete[] matrices_c;
 
     return 0;
-    }
+}
