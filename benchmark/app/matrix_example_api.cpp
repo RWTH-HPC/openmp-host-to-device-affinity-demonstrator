@@ -292,8 +292,8 @@ int main(int argc, char **argv)
     std::cout << "CUDA device distance initalization was successful and took " << fTimeEnd-fTimeStart << std::endl;
 
     unsigned int num_cuda_devices = system_info::get_num_cuda_devices();
-    std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
-    system_info::get_cuda_device_info(0);
+    //std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
+    //system_info::get_cuda_device_info(0);
 
     std::vector<double> thread_waiting_time(omp_get_max_threads()*32);
     std::vector<unsigned int> thread_gpu(omp_get_max_threads()*32);
@@ -396,8 +396,8 @@ int main(int argc, char **argv)
         std::cout << "Invocation latency of thread " << i << " on GPU" << thread_gpu[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }
     // TODO: fix min max calculation when working with padded array
-    const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
-    std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
+    //const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
+    //std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
 
 
 #if (COMPUTE == 1)

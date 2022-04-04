@@ -84,12 +84,16 @@
 #define ASYNC 0
 #endif
 
-#ifndef BLOCK_SIZE
-#define BLOCK_SIZE 2
-#endif
+//#ifndef BLOCK_SIZE
+//#define BLOCK_SIZE 2
+//#endif
 
 #ifndef PINNED_MEMORY
-#define PINNED_MEMORY 1
+#define PINNED_MEMORY 0
+#endif
+
+#ifndef UNIFIED_MEMORY
+#define UNIFIED_MEMORY 0
 #endif
 
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)

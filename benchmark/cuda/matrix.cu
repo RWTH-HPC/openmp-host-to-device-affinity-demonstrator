@@ -202,10 +202,14 @@ void kernel::unpin(void *data) {
 }
 
 void *kernel::hostPinnedMalloc(size_t size, const int device) {
-    //cudaSetDevice(device);
-
     void *ptr;
+
+#if (UNIFIED_MEMORY == 0)
+    cudaSetDevice(device);
+    cudaHostAlloc(&ptr, size, cudaHostAllocDefault);
+#elif (UNIFIED_MEMORY == 1)
     cudaHostAlloc(&ptr, size, cudaHostAllocPortable);
+#endif
     return ptr;
 }
 
