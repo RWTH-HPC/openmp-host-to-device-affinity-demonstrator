@@ -1,54 +1,102 @@
 {
     "name" : "memory_benchmark",
-    "repetitions" : 2,
+    "repetitions" : 3,
     "tests" : [
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
+            "OMP_PLACES": "cores",
             "parameters" : "32 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "2048 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "64 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "4096 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "96 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "6144 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "128 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "8192 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "160 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "10240 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "192 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "12288 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "224 120"
         },
         {
             "OMP_PROC_BIND" : "spread",
             "OMP_NUM_THREADS" : 12,
-            "OMP_PLACES" : "cores",
-            "parameters" : "14336 36"
+            "OMP_PLACES": "cores",
+            "parameters" : "256 120"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "1024 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "2048 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "3072 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "4096 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "5120 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "6144 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "7168 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "8192 12"
         }
     ]
 }

@@ -7,7 +7,7 @@ import subprocess
 import numpy as np
 
 def main():
-    config_path, output_path = parse_cmd()
+    config_path, output_path, binary_path, numa_balancing = parse_cmd()
     
     config = {}
     with open(config_path, "r") as config_file:
@@ -28,8 +28,11 @@ def main():
         for i in range(config["repetitions"]):
             print(i, end=" ")
             sys.stdout.flush()
-            cmd_best = ["no_numa_balancing"] + ["benchmark/build/app/distanceBenchmark_best"] + test["parameters"].split(" ")
-            cmd_worst = ["no_numa_balancing"] + ["benchmark/build/app/distanceBenchmark_worst"] + test["parameters"].split(" ")
+            cmd_best = [binary_path + "distanceBenchmark_best"] + test["parameters"].split(" ")
+            cmd_worst = [binary_path + "distanceBenchmark_worst"] + test["parameters"].split(" ")
+            if not numa_balancing:
+                cmd_best = ["no_numa_balancing"] + cmd_best
+                cmd_worst = ["no_numa_balancing"] + cmd_worst
             env = os.environ
             for key in test.keys():
                 if "OMP" in key:
@@ -47,19 +50,15 @@ def main():
 
     print("Raw output files can be found at", output_path + "raw/" + config["name"] + "_*.output");
     
-    # parse data
-    try:
-        results = {}
-        for test in config["tests"]:
-            test_output_name = "_".join([str(test[key]) for key in test.keys() if not key == "OMP_PLACES" and not "result" in key ])
-            results[test_output_name] = { "best" : parse_results(test["best_result"]), "worst" : parse_results(test["worst_result"]) }
-            results[test_output_name]["config"] = {item[0] : item[1] for item in test.items() if not "result" in item[0]}
+    results = {}
+    for test in config["tests"]:
+        test_output_name = "_".join([str(test[key]) for key in test.keys() if not key == "OMP_PLACES" and not "result" in key ])
+        results[test_output_name] = { "best" : parse_results(test["best_result"]), "worst" : parse_results(test["worst_result"]) }
+        results[test_output_name]["config"] = {item[0] : item[1] for item in test.items() if not "result" in item[0]}
 
-        with open(output_path + config["name"] + "_parsed.json", "w") as result_file:
-            result_file.write(json.dumps(results, indent=4))
-        print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json");
-    except:
-        pass
+    with open(output_path + config["name"] + "_parsed.json", "w") as result_file:
+        result_file.write(json.dumps(results, indent=4))
+    print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json");
         
 
 
@@ -67,9 +66,10 @@ def parse_results(results):
     parsed_data = {}
     known_keys = {
             "CUDA device distance initalization was successful and took" : "init",
+            "Memory Allocation duration" : "allocation",
             "Computations with normal tasking took" : "computation",
-            "Waiting times of thread" : "wait",
-            "Ratio longest waiting time / shortest waiting time" : "ratio"
+            "Invocation latency of thread" : "wait",
+            #"Ratio longest waiting time / shortest waiting time" : "ratio"
     }
 
     for value in known_keys.values():
@@ -118,6 +118,8 @@ def parse_results(results):
 def parse_cmd():
     config_path = ""
     output_path = ""
+    binary_path = ""
+    numa_balancing = True
 
     for i, arg in enumerate(sys.argv):
         if i < len(sys.argv) - 1:
@@ -125,14 +127,19 @@ def parse_cmd():
                 config_path = sys.argv[i+1]
             elif arg == "--output":
                 output_path = sys.argv[i+1].strip("/")
+            elif arg == "--binary":
+                binary_path = sys.argv[i+1].strip("/")
+            elif arg == "--no_numa_balancing":
+                numa_balancing = False
 
-    if config_path == "" or output_path == "":
-        print("Error: config or output dir not specified: Use --config config/parameters.json and --output output_dir")
+    if config_path == "" or output_path == "" or binary_path == "":
+        print("Error: config or output dir not specified: Use --config config/parameters.json and --output output_dir and --binary binary_path")
         sys.exit(1)
 
     output_path += "/"
+    binary_path += "/"
 
-    return config_path, output_path
+    return config_path, output_path, binary_path, numa_balancing
 
 
 if __name__ == "__main__":
