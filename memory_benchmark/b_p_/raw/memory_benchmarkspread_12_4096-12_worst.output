@@ -2,62 +2,62 @@ using user-defined initial load distribution...
 Mode: Normal Task Distribution
 Computation deactivated, only memory performance is measured
 Will create 12 tasks
-CUDA device distance initalization was successful and took 1.15918
+CUDA device distance initalization was successful and took 2.31708
 Executing parallel init
-Memory Allocation duration: 2.28777
-Computations with normal tasking took 0.20161
-Invocation latency of thread 0 on GPU1: 0.116748
-Invocation latency of thread 1 on GPU1: 0.0576582
-Invocation latency of thread 2 on GPU1: 0.0576661
-Invocation latency of thread 3 on GPU1: 0.116724
-Invocation latency of thread 4 on GPU1: 0.104041
-Invocation latency of thread 5 on GPU1: 0.103956
-Invocation latency of thread 6 on GPU0: 0.126184
-Invocation latency of thread 7 on GPU0: 0.0578051
-Invocation latency of thread 8 on GPU0: 0.126192
-Invocation latency of thread 9 on GPU0: 0.0578101
-Invocation latency of thread 10 on GPU0: 0.105866
-Invocation latency of thread 11 on GPU0: 0.10586
+Memory Allocation duration: 2.29698
+Computations with normal tasking took 0.19797
+Invocation latency of thread 0 on GPU1: 0.0237169
+Invocation latency of thread 1 on GPU1: 0.0309489
+Invocation latency of thread 2 on GPU1: 0.035789
+Invocation latency of thread 3 on GPU1: 0.032707
+Invocation latency of thread 4 on GPU1: 0.026947
+Invocation latency of thread 5 on GPU1: 0.024611
+Invocation latency of thread 6 on GPU0: 0.0353012
+Invocation latency of thread 7 on GPU0: 0.0239482
+Invocation latency of thread 8 on GPU0: 0.028394
+Invocation latency of thread 9 on GPU0: 0.036973
+Invocation latency of thread 10 on GPU0: 0.0321362
+Invocation latency of thread 11 on GPU0: 0.032197
 Validation skipped
 using user-defined initial load distribution...
 Mode: Normal Task Distribution
 Computation deactivated, only memory performance is measured
 Will create 12 tasks
-CUDA device distance initalization was successful and took 1.17263
+CUDA device distance initalization was successful and took 2.31712
 Executing parallel init
-Memory Allocation duration: 2.25783
-Computations with normal tasking took 0.21767
-Invocation latency of thread 0 on GPU1: 0.0559518
-Invocation latency of thread 1 on GPU1: 0.0995021
-Invocation latency of thread 2 on GPU1: 0.0559471
-Invocation latency of thread 3 on GPU1: 0.116806
-Invocation latency of thread 4 on GPU1: 0.116844
-Invocation latency of thread 5 on GPU1: 0.09955
-Invocation latency of thread 6 on GPU0: 0.117589
-Invocation latency of thread 7 on GPU0: 0.070096
-Invocation latency of thread 8 on GPU0: 0.05632
-Invocation latency of thread 9 on GPU0: 0.101697
-Invocation latency of thread 10 on GPU0: 0.117578
-Invocation latency of thread 11 on GPU0: 0.0700371
+Memory Allocation duration: 2.25588
+Computations with normal tasking took 0.19898
+Invocation latency of thread 0 on GPU1: 0.030663
+Invocation latency of thread 1 on GPU1: 0.0289059
+Invocation latency of thread 2 on GPU1: 0.0232561
+Invocation latency of thread 3 on GPU1: 0.0248151
+Invocation latency of thread 4 on GPU1: 0.0337191
+Invocation latency of thread 5 on GPU1: 0.0367451
+Invocation latency of thread 6 on GPU0: 0.0285819
+Invocation latency of thread 7 on GPU0: 0.0286362
+Invocation latency of thread 8 on GPU0: 0.035238
+Invocation latency of thread 9 on GPU0: 0.0374289
+Invocation latency of thread 10 on GPU0: 0.0301211
+Invocation latency of thread 11 on GPU0: 0.0331669
 Validation skipped
 using user-defined initial load distribution...
 Mode: Normal Task Distribution
 Computation deactivated, only memory performance is measured
 Will create 12 tasks
-CUDA device distance initalization was successful and took 1.16599
+CUDA device distance initalization was successful and took 2.30109
 Executing parallel init
-Memory Allocation duration: 2.26409
-Computations with normal tasking took 0.21043
-Invocation latency of thread 0 on GPU1: 0.101669
-Invocation latency of thread 1 on GPU1: 0.122067
-Invocation latency of thread 2 on GPU1: 0.101625
-Invocation latency of thread 3 on GPU1: 0.057024
-Invocation latency of thread 4 on GPU1: 0.122077
-Invocation latency of thread 5 on GPU1: 0.0570259
-Invocation latency of thread 6 on GPU0: 0.103067
-Invocation latency of thread 7 on GPU0: 0.127189
-Invocation latency of thread 8 on GPU0: 0.127184
-Invocation latency of thread 9 on GPU0: 0.0883641
-Invocation latency of thread 10 on GPU0: 0.0883679
-Invocation latency of thread 11 on GPU0: 0.0883379
+Memory Allocation duration: 2.29086
+Computations with normal tasking took 0.18724
+Invocation latency of thread 0 on GPU1: 0.03163
+Invocation latency of thread 1 on GPU1: 0.0335419
+Invocation latency of thread 2 on GPU1: 0.021909
+Invocation latency of thread 3 on GPU1: 0.0357349
+Invocation latency of thread 4 on GPU1: 0.0239079
+Invocation latency of thread 5 on GPU1: 0.0294781
+Invocation latency of thread 6 on GPU0: 0.0244062
+Invocation latency of thread 7 on GPU0: 0.0350821
+Invocation latency of thread 8 on GPU0: 0.0213871
+Invocation latency of thread 9 on GPU0: 0.0274041
+Invocation latency of thread 10 on GPU0: 0.0303211
+Invocation latency of thread 11 on GPU0: 0.0321262
 Validation skipped

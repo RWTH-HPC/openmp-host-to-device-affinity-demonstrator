@@ -8,6 +8,6 @@
 #SBATCH --output=output.%J.txt
 #SBATCH --time=1-02:00:00
 
-export MODULEPATH=$MODULEPATH:/home/co693196/.modules/modulefiles/PERSONAL
+export MODULEPATH=$MODULEPATH:$HOME/.modules/modulefiles/PERSONAL
 source ./env
 ./run_benchmark.py --config config/memory_benchmark.json --output memory_benchmark/__p_ --binary benchmark/build/app/_p_ --no_numa_balancing
