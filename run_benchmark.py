@@ -3,6 +3,7 @@
 import sys
 import json
 import os
+from time import time
 import subprocess
 import numpy as np
 
@@ -18,6 +19,7 @@ def main():
 
     #generate data
 
+    guess = 90
     for test in config["tests"]:
         test_output_name = "_".join([str(test[key]).replace(" ", "-") for key in test.keys() if not key == "OMP_PLACES"])
         best_output = b""
@@ -25,8 +27,11 @@ def main():
 
         print("Executing test", test_output_name)
         test["best_result"] = []
+
+        guess *= 2
+
         for i in range(config["repetitions"]):
-            print(i, end=" ")
+            print(i, end="")
             sys.stdout.flush()
             cmd_best = [binary_path + "distanceBenchmark_best"] + test["parameters"].split(" ")
             cmd_worst = [binary_path + "distanceBenchmark_worst"] + test["parameters"].split(" ")
@@ -37,8 +42,29 @@ def main():
             for key in test.keys():
                 if "OMP" in key:
                     env[key] = str(test[key])
-            best_output += subprocess.check_output(cmd_best, env=env)
-            worst_output += subprocess.check_output(cmd_worst, env=env)
+
+            is_stuck = True
+            while is_stuck:
+                try:
+                    start = time()
+                    tmp_output = subprocess.check_output(cmd_best, env=env, timeout=guess)
+                    guess = int(min(guess, 2*(time()-start))) + 1
+                    best_output += tmp_output
+                    is_stuck = False
+                except subprocess.TimeoutExpired:
+                    print("+", end="")
+
+            is_stuck = True
+            while is_stuck:
+                try:
+                    start = time()
+                    tmp_output = subprocess.check_output(cmd_worst, env=env, timeout=guess)
+                    guess = int(min(guess, 2*(time()-start))) + 1
+                    worst_output += tmp_output
+                    is_stuck = False
+                except subprocess.TimeoutExpired:
+                    print("-", end="")
+            print(" ", end="")
         print("")
 
         test["best_result"] = best_output.decode("UTF-8");
