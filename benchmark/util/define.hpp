@@ -96,6 +96,10 @@
 #define UNIFIED_MEMORY 0
 #endif
 
+#ifndef LIBOMPTARGET_NUMA_DEVICE_AFFINITY
+#define LIBOMPTARGET_NUMA_DEVICE_AFFINITY 0
+#endif
+
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
 #define LOG(str) printf("%s\n", str)
 

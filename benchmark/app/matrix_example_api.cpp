@@ -20,11 +20,16 @@
 #include <algorithm>
 #include <functional>
 #include <omp.h>
+#include <memory>
 
 #include "../util/string.hpp"
+
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
 #include "../util/cuda_device_distance.hpp"
 #include "../util/system_info.hpp"
-#include "../cuda/matrix.cuh"
+#endif
+
+#include "../kernel/kernel.hpp"
 
 #if CHECK_GENERATED_TASK_ID
 #include <mutex>
@@ -278,6 +283,7 @@ int main(int argc, char **argv)
     if (numberOfTasks % omp_get_max_threads() != 0)
         std::cout << "Warning: Number of tasks not evenly dividable by number of threads, threads will have different workloads" << std::endl;
 
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
     // GPU distance initalization
     fTimeStart = omp_get_wtime();
     int err = distance::init();
@@ -291,25 +297,54 @@ int main(int argc, char **argv)
     }
     std::cout << "CUDA device distance initalization was successful and took " << fTimeEnd-fTimeStart << std::endl;
 
-    unsigned int num_cuda_devices = system_info::get_num_cuda_devices();
-    //std::cout << "Num CUDA devices found: " << num_cuda_devices << std::endl;
-    //system_info::get_cuda_device_info(0);
+    int num_cuda_devices = system_info::get_num_cuda_devices();
+#else
+    int num_cuda_devices = omp_get_num_devices();
+#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
 
+    
     std::vector<double> thread_waiting_time(omp_get_max_threads()*32);
-    std::vector<unsigned int> thread_gpu(omp_get_max_threads()*32);
+    std::vector<int> thread_device(omp_get_max_threads()*32);
+    std::vector<std::unique_ptr<kernel::MatrixMultiplyDevice>> devices(num_cuda_devices);
 
+    for (int i = 0; i < num_cuda_devices; i++) {
+#if (ASYNC == 0)
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+        devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)
+            std::make_unique<kernel::MatrixMultiplyCUDA>(i);
+#else
+        devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)
+            std::make_unique<kernel::MatrixMultiplyOMP>(i);
+#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
+#else
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+        devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)
+            std::make_unique<kernel::MatrixMultiplyCUDA>(i, omp_get_max_threads());
+#else
+        devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)
+            std::make_unique<kernel::MatrixMultiplyOMP>(i);
+#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
+#endif // ASYNC
+    }
 
 #if (GPU == 0)
-    unsigned int target_distance_index = 0;
+    int target_distance_index = 0;
 #elif (GPU == 1)
-    unsigned int target_distance_index = num_cuda_devices - 1;
+    int target_distance_index = num_cuda_devices - 1;
 #endif
+
 
     #pragma omp parallel
     {
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
         unsigned int cpu, numa;
         system_info::get_current_cpu(cpu, numa);
-        thread_gpu[omp_get_thread_num()*32] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+        thread_device[omp_get_thread_num()*32] = distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+#else
+        int devices[num_cuda_devices];
+        omp_get_devices_in_order(num_cuda_devices, devices);
+        thread_device[omp_get_thread_num() * 32] = devices[target_distance_index];
+#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
     }
 
 
@@ -332,9 +367,9 @@ int main(int argc, char **argv)
         matrices_b[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
         matrices_c[i] = (double*) alloc((long)cur_size*cur_size*sizeof(double));
 #else
-        matrices_a[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
-        matrices_b[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
-        matrices_c[i] = (double*) kernel::hostPinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_gpu[omp_get_thread_num()*32]);
+        matrices_a[i] = (double*) kernel::pinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_device[omp_get_thread_num()*32]);
+        matrices_b[i] = (double*) kernel::pinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_device[omp_get_thread_num()*32]);
+        matrices_c[i] = (double*) kernel::pinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_device[omp_get_thread_num()*32]);
 #endif
         if(RANDOMINIT) {
             initialize_matrix_rnd(matrices_a[i], cur_size);
@@ -351,12 +386,8 @@ int main(int argc, char **argv)
     std::cout << "Memory Allocation duration: " << memory_allocation_time << std::endl;
 
 
+
     fTimeStart=omp_get_wtime();
-#if (ASYNC == 1)
-    kernel::initStreams(omp_get_max_threads());
-    for (int i = 0; i < omp_get_max_threads(); i++)
-        kernel::createStream(i, thread_gpu[i*32]);
-#endif
 
     #pragma omp parallel for schedule(static)
     for(int i=0; i<numberOfTasks; i++) {
@@ -371,29 +402,31 @@ int main(int argc, char **argv)
         // {
             double t0 = omp_get_wtime();
 #if (ASYNC == 0)
-            kernel::execute_matrix_multiply_kernel(
-                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    thread_gpu[omp_get_thread_num()*32]);
+            devices[thread_device[omp_get_thread_num() * 32]]->execute(
+                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
 #elif (ASYNC == 1)
-            kernel::execute_matrix_multiply_kernel_async(
-                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, 
-                    omp_get_thread_num(),
-                    thread_gpu[omp_get_thread_num()*32]);
-#endif
+            devices[thread_device[omp_get_thread_num() * 32]]->executeAsync(
+                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, omp_get_thread_num());
+#endif // ASYNC
             thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
         // }
     }
 
 #if (ASYNC == 1)
-    for (int i = 0; i < omp_get_max_threads(); i++)
-        kernel::syncronizeStream(i);
-#endif
+#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+    for (int i = 0; i < num_cuda_devices; i++) {
+        for (int j = 0; j < omp_get_max_threads(); j++) {
+            static_cast<kernel::MatrixMultiplyCUDA*>(devices[i].get())->syncronizeStream(j);
+        }
+    }
+#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
+#endif // ASYNC
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
     printf("Computations with normal tasking took %.5f\n", wTimeHost);
     for (int i = 0; i < omp_get_max_threads(); i++) {
-        std::cout << "Invocation latency of thread " << i << " on GPU" << thread_gpu[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
+        std::cout << "Invocation latency of thread " << i << " on GPU" << thread_device[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }
     // TODO: fix min max calculation when working with padded array
     //const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
@@ -409,21 +442,21 @@ int main(int argc, char **argv)
                 cur_size = non_uniform_full_array_matrix_sizes[t];
             }
 
-            /*for (int i = 0; i < cur_size; i++) {
-                std::cout << "[ ";
-                for (int j = 0; j < cur_size; j++) {
-                    std::cout << matrices_a[t][i*cur_size+j] << " ";
-                }
-                std::cout << "] * [ ";
-                for (int j = 0; j < cur_size; j++) {
-                    std::cout << matrices_b[t][i*cur_size+j] << " ";
-                }
-                std::cout << "] = [ ";
-                for (int j = 0; j < cur_size; j++) {
-                    std::cout << matrices_c[t][i*cur_size+j] << " ";
-                }
-                std::cout << "]" << std::endl;
-            }*/
+            //for (int i = 0; i < cur_size; i++) {
+            //    std::cout << "[ ";
+            //    for (int j = 0; j < cur_size; j++) {
+            //        std::cout << matrices_a[t][i*cur_size+j] << " ";
+            //    }
+            //    std::cout << "] * [ ";
+            //    for (int j = 0; j < cur_size; j++) {
+            //        std::cout << matrices_b[t][i*cur_size+j] << " ";
+            //    }
+            //    std::cout << "] = [ ";
+            //    for (int j = 0; j < cur_size; j++) {
+            //        std::cout << matrices_c[t][i*cur_size+j] << " ";
+            //    }
+            //    std::cout << "]" << std::endl;
+            //}
 
             pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
         }
@@ -444,9 +477,9 @@ int main(int argc, char **argv)
         free(matrices_b[i]);
         free(matrices_c[i]);
 #else
-        kernel::hostPinnedFree(matrices_a[i]);
-        kernel::hostPinnedFree(matrices_b[i]);
-        kernel::hostPinnedFree(matrices_c[i]);
+        kernel::pinnedFree(matrices_a[i]);
+        kernel::pinnedFree(matrices_b[i]);
+        kernel::pinnedFree(matrices_c[i]);
 #endif 
     }
 
