@@ -3,7 +3,7 @@
 #include "kernel.hpp"
 #include "../util/define.hpp"
 
-#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+#if (USE_OMP_TARGET == 0)
 
 using namespace kernel;
 
@@ -123,22 +123,4 @@ void MatrixMultiplyCUDA::syncronizeStream(int const stream_id) const {
     cudaStreamSynchronize(streams[stream_id]);
     cudaStreamDestroy(streams[stream_id]);
 }
-
-
-void *kernel::pinnedMalloc(size_t size, int const device) {
-    void *ptr;
-
-#if (UNIFIED_MEMORY == 0)
-    cudaSetDevice(device);
-    cudaHostAlloc(&ptr, size, cudaHostAllocDefault);
-#elif (UNIFIED_MEMORY == 1)
-    cudaHostAlloc(&ptr, size, cudaHostAllocPortable);
-#endif
-    return ptr;
-}
-
-void kernel::pinnedFree(void *data) {
-    cudaFreeHost(data);
-}
-
-#endif // LIBOMPTARGET_NUMA_DEVICE_AFFINITY
+#endif // USE_OMP_TARGET

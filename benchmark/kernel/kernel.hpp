@@ -3,7 +3,7 @@
 #include "../util//define.hpp"
 
 #include <cstddef>
-#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+#if (USE_OMP_TARGET == 0)
 #include <cuda_runtime.h>
 #endif
 
@@ -19,7 +19,7 @@ namespace kernel {
         virtual void executeAsync(double const *a, double const *b, double *c, int const n, int const stream_id) const = 0;
     };
 
-#if (LIBOMPTARGET_NUMA_DEVICE_AFFINITY == 0)
+#if (USE_OMP_TARGET == 0)
     class MatrixMultiplyCUDA : public MatrixMultiplyDevice {
     private:
         cudaStream_t *streams;
@@ -38,8 +38,5 @@ namespace kernel {
         void execute(double const *a, double const *b, double *c, int const n) const override;
         void executeAsync(double const *a, double const *b, double *c, int const n, int const stream_id) const override;
     };
-
-    void *pinnedMalloc(size_t size, int const device);
-    void  pinnedFree(void *data);
-}
 #endif
+}

@@ -96,8 +96,8 @@
 #define UNIFIED_MEMORY 0
 #endif
 
-#ifndef LIBOMPTARGET_NUMA_DEVICE_AFFINITY
-#define LIBOMPTARGET_NUMA_DEVICE_AFFINITY 0
+#ifndef USE_OMP_TARGET
+#define USE_OMP_TARGET 0
 #endif
 
 //#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
