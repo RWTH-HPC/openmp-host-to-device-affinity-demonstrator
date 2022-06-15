@@ -1,20 +1,26 @@
 # hiwi-jan-kraus
 
+## Prerequisits for benchmark codes
+
+- gcc/9 required as the nvcc host compiler
+- clang/11
+- cuda/11.4 or similar versions
+- cmake>=3.13
+- hwloc/2.5.0 or similar versions
+- [openmp/target-dev](https://github.com/jkravs/llvm-project/tree/target-dev/openmp) (read the readme.md there)
+
 ## Compiling
 
-Load environment using
-    source env
-
-open `benchmark/CMakeLists.txt` and change `-DCOMPUTE` and `-DASYNC` where `=1` means activate and `=0` means deactivate.
+Activate or deactivate computing, async, pinned memory, unified memory in benchmark/CMakeLists.txt
 
 Compile benchmark with
 
 ```shell
 mkdir benchmark/build
 cd benchmark/build
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \ 
-    -DCMAKE_CUDA_ARCHITECTURES=60 \ 
+cmake -DCMAKE_CUDA_ARCHITECTURES=60 \ 
     -DHWLOC_LOCAL_INSTALL_DIR=/path/to/hwloc/2.5.0 \
+    -DUSE_OMP_TARGET=1
     -DCMAKE_BUILD_TYPE=Release ..
 ```
 
