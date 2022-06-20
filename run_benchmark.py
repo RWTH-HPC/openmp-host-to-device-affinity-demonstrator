@@ -31,8 +31,6 @@ def main():
         guess *= 2
 
         for i in range(config["repetitions"]):
-            print(i, end="")
-            sys.stdout.flush()
             cmd_best = [binary_path + "distanceBenchmark_best"] + test["parameters"].split(" ")
             cmd_worst = [binary_path + "distanceBenchmark_worst"] + test["parameters"].split(" ")
             if not numa_balancing:
@@ -41,7 +39,16 @@ def main():
             env = os.environ
             for key in test.keys():
                 if "OMP" in key:
+                    if i == 0:
+                        print(f"-- Setting env variable --> {key}=${test[key]}")
                     env[key] = str(test[key])
+
+            if i == 0:
+                print(f"-- Executing (best) : \"{cmd_best}\"")
+                print(f"-- Executing (worst): \"{cmd_worst}\"")
+
+            print(i, end="")
+            sys.stdout.flush()
 
             is_stuck = True
             while is_stuck:
@@ -84,7 +91,7 @@ def main():
 
     with open(output_path + config["name"] + "_parsed.json", "w") as result_file:
         result_file.write(json.dumps(results, indent=4))
-    print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json");
+    print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json")
         
 
 
@@ -93,7 +100,7 @@ def parse_results(results):
     known_keys = {
             "CUDA device distance initalization was successful and took" : "init",
             "Memory Allocation duration" : "allocation",
-            "Computations with normal tasking took" : "computation",
+            "Computations took" : "computation",
             "Invocation latency of thread" : "wait",
             #"Ratio longest waiting time / shortest waiting time" : "ratio"
     }

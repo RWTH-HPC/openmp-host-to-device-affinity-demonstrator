@@ -381,7 +381,7 @@ int main(int argc, char **argv)
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
-    printf("Computations with normal tasking took %.5f\n", wTimeHost);
+    printf("Computations took %.5f\n", wTimeHost);
     for (int i = 0; i < omp_get_max_threads(); i++) {
         std::cout << "Invocation latency of thread " << i << " on GPU" << thread_device[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }

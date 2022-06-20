@@ -10,10 +10,14 @@ export CMAKE_BUILD_TYPE=Release
 export USE_OMP_TARGET=0
 export LIBOMPTARGET_LIB_PATH=""
 
-LIST_COMPUTE=(0 1)
-LIST_ASYNC=(0 1)
-LIST_PINNED_MEM=(0 1)
-LIST_UNIFIED_MEM=(0 1)
+# LIST_COMPUTE=(0 1)
+# LIST_ASYNC=(0 1)
+# LIST_PINNED_MEM=(0 1)
+# LIST_UNIFIED_MEM=(0 1)
+LIST_COMPUTE=(0)
+LIST_ASYNC=(0)
+LIST_PINNED_MEM=(0)
+LIST_UNIFIED_MEM=(0)
 
 # create directory for binaries
 CUR_DIR=$PWD
@@ -45,7 +49,7 @@ do
                         -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES} \
                         -DUSE_OMP_TARGET=${USE_OMP_TARGET} \
                         -DLIBOMPTARGET_LIB_PATH=${LIBOMPTARGET_LIB_PATH} \
-                        -DNDEBUG \
+                        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
                         ../..
                 make || echo "Error"
 

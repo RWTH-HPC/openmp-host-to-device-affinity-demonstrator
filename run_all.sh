@@ -3,10 +3,16 @@
 # load corresponding environment or source modules
 source ./env
 
-LIST_COMPUTE=(0 1)
-LIST_ASYNC=(0 1)
-LIST_PINNED_MEM=(0 1)
-LIST_UNIFIED_MEM=(0 1)
+# LIST_COMPUTE=(0 1)
+# LIST_ASYNC=(0 1)
+# LIST_PINNED_MEM=(0 1)
+# LIST_UNIFIED_MEM=(0 1)
+# LIST_NUMA_BALANCING=(0 1)
+
+LIST_COMPUTE=(0)
+LIST_ASYNC=(0)
+LIST_PINNED_MEM=(0)
+LIST_UNIFIED_MEM=(0)
 LIST_NUMA_BALANCING=(0 1)
 
 # create directory for binaries

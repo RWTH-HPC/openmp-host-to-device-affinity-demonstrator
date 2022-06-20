@@ -52,6 +52,10 @@ else()
     set (EXTRA_FLAGS "${EXTRA_FLAGS} -DUNIFIED_MEMORY=0")
 endif()
 
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set (EXTRA_FLAGS "${EXTRA_FLAGS} -DNDEBUG")
+endif()
+
 if (USE_OMP_TARGET)
     set (EXTRA_FLAGS "${EXTRA_FLAGS} -DUSE_OMP_TARGET=1")
     set (EXTRA_DEVICE_FLAGS "${EXTRA_DEVICE_FLAGS} -fopenmp-targets=nvptx64-nvidia-cuda")
