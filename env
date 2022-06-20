@@ -3,7 +3,7 @@
 module purge
 module load DEVELOP
 module load gcc/9
-#module load intel
+module load clang/11
 module load intelmpi
 module load cuda/11.4
 module load cmake/3.21.1

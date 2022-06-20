@@ -152,9 +152,9 @@ def parse_cmd():
             if arg == "--config":
                 config_path = sys.argv[i+1]
             elif arg == "--output":
-                output_path = sys.argv[i+1].strip("/")
+                output_path = sys.argv[i+1].strip()
             elif arg == "--binary":
-                binary_path = sys.argv[i+1].strip("/")
+                binary_path = sys.argv[i+1].strip()
             elif arg == "--no_numa_balancing":
                 numa_balancing = False
 

@@ -2,11 +2,11 @@ set(SOURCE_FILES
     matrix_example_api.cpp)
 
 add_executable(distanceBenchmark_best ${SOURCE_FILES})
-target_compile_definitions(distanceBenchmark_best PRIVATE GPU=0)
+target_compile_definitions(distanceBenchmark_best PRIVATE USE_CLOSEST_GPU=0)
 add_dependencies(distanceBenchmark_best distanceBenchmark_util distanceBenchmark_kernel distanceBenchmark_kernel_memory)
 target_link_libraries(distanceBenchmark_best distanceBenchmark_util distanceBenchmark_kernel distanceBenchmark_kernel_memory)
 
 add_executable(distanceBenchmark_worst ${SOURCE_FILES})
-target_compile_definitions(distanceBenchmark_worst PRIVATE GPU=1)
+target_compile_definitions(distanceBenchmark_worst PRIVATE USE_CLOSEST_GPU=1)
 add_dependencies(distanceBenchmark_worst distanceBenchmark_util distanceBenchmark_kernel distanceBenchmark_kernel_memory)
 target_link_libraries(distanceBenchmark_worst distanceBenchmark_util distanceBenchmark_kernel distanceBenchmark_kernel_memory)

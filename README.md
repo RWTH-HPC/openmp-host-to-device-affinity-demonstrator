@@ -7,11 +7,11 @@
 - cuda/11.4 or similar versions
 - cmake>=3.13
 - hwloc/2.5.0 or similar versions
-- [openmp/target-dev](https://github.com/jkravs/llvm-project/tree/target-dev/openmp) (read the readme.md there)
+- [openmp/target-dev](https://github.com/jkravs/llvm-project/tree/target-dev/openmp) (read the README.md there)
 
 ## Compiling
 
-Activate or deactivate computing, async, pinned memory, unified memory in benchmark/CMakeLists.txt
+Activate or deactivate computing, async, pinned memory, unified memory in `benchmark/CMakeLists.txt`
 
 Compile benchmark with
 
