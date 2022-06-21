@@ -6,6 +6,12 @@ source ./load_env.sh
 # unlimited core files (if anything crashes)
 ulimit -c unlimited
 
+export USE_OMP_TARGET=0
+if [ "${USE_OMP_TARGET}" = "1" ]; then
+    export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL
+    export LD_LIBRARY_PATH="$LIBOMPTARGET_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
+fi
+
 LIST_COMPUTE=(0 1)
 LIST_ASYNC=(0 1)
 LIST_PINNED_MEM=(0 1)

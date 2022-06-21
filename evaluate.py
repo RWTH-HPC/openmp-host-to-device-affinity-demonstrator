@@ -23,10 +23,9 @@ class CVersion:
         self.data       = None
         self.test_cases = []
 
-    def parse_data(self, folder_path, folder_name) -> bool:
-        # TODO: need to pass config name
-        path_benchmark = os.path.join(folder_path, "memory_benchmark_parsed.json")
-        if not os.path.exists(path_benchmark):
+    def parse_data(self, folder_path, folder_name, args) -> bool:
+        path_benchmark_res = os.path.join(folder_path, f"{args.configuration}_parsed.json")
+        if not os.path.exists(path_benchmark_res):
             return False
 
         spl = folder_name.split("_")
@@ -37,7 +36,7 @@ class CVersion:
         self.has_pinned_mem     = int(spl[3][-1])==1
         self.has_unified_mem    = int(spl[4][-1])==1
         
-        with open(path_benchmark, 'r') as f:
+        with open(path_benchmark_res, 'r') as f:
             self.data       = json.loads(f.read())
             self.test_cases = [TestCase(x) for x in list(self.data.keys())]
 
@@ -52,9 +51,10 @@ class CVersion:
         return title
 
 def plot_data(grp: list[CVersion], args, threshold_limits):
-    # TODO: make those configurable
-    min_m_size = threshold_limits[0]
-    max_m_size = threshold_limits[1]
+    min_m_size  = threshold_limits[0]
+    max_m_size  = threshold_limits[1]
+    tmp_ext     = "large-sizes" if max_m_size == sys.maxsize else "small-sizes"
+    tmp_max_val = "inf" if max_m_size == sys.maxsize else max_m_size
 
     cases = sorted(grp[0].test_cases, key=lambda x: x.m_size, reverse=False)
     cases = [x for x in cases if x.m_size >= min_m_size and x.m_size < max_m_size]
@@ -89,18 +89,17 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
         ax_all.errorbar(     mb_per_thr, (allocation_worst + execution_worst)/n_thr, yerr=np.sqrt(u_allocation_worst**2+u_exection_worst**2)/n_thr, marker='o', linestyle='--', label=f'Allocation + Computation time furthest {txt_balanced}')
 
         # ========== DEBUG
+        print(f"Statistics: {ver.exe_id} {txt_balanced} ({tmp_ext})")
         m,i    = max(list(zip(((allocation_worst + execution_worst) - (allocation_best + execution_best))/(allocation_best + execution_best),range(len(execution_worst)))))
         mi, i2 = min(list(zip(((allocation_worst + execution_worst) - (allocation_best + execution_best))/(allocation_best + execution_best),range(len(execution_worst)))))
-        #a = (allocation_best + execution_best)[i]
-        #b = (allocation_worst + execution_worst)[i]
-        #print(m,i)
-        #print(balanced)
-        #print('Min relative difference', mb_per_thread[i2], 'MB,', mi*100,"%")
-        #print('Max relative difference', mb_per_thread[i], 'MB,', m*100,"%")
-        #print()
+        # a = (allocation_best + execution_best)[i]
+        # b = (allocation_worst + execution_worst)[i]
+        print(m,i)
+        print('Min relative difference', mb_per_thr[i2], 'MB,', mi*100,"%")
+        print('Max relative difference', mb_per_thr[i], 'MB,', m*100,"%")
+        print()
         # ========== DEBUG
     
-    tmp_max_val = "inf" if max_m_size == sys.maxsize else max_m_size
     fig.suptitle(ver.create_title() + f", m_sizes [{min_m_size}, {tmp_max_val}]")
     ax_all.set_title("Allocation + Computation")
     ax_all.set_xlabel("Copied data per task [MB]")
@@ -121,8 +120,10 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
     ax_compute.set_ylabel("Avg duration [sec]")
     ax_compute.grid()
 
-    # TODO: save figures
-    plt.show()
+    if args.interactive:
+        plt.show()
+    fig.savefig(os.path.join(args.destination, f"plot_{grp[0].exe_id}_{tmp_ext}.png"), dpi='figure', format="png", bbox_inches="tight", pad_inches=0.1, facecolor='w', edgecolor='w', transparent=False)
+    plt.close(fig)
 
 def group_versions_by_id(versions):
     ret = []
@@ -139,7 +140,7 @@ def main(args):
         if os.path.isdir(tmp_path):
             print(tmp_path)
             obj = CVersion()
-            if obj.parse_data(tmp_path, item):
+            if obj.parse_data(tmp_path, item, args):
                 versions.append(obj)
 
     # group version results with same ID (w/o and w/ numa balancing)
@@ -154,6 +155,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parses and summarizes execution time measurement results")
     parser.add_argument("-s", "--source",         required=False, type=str, metavar="<folder path>", help=f"source folder containing outputs")
+    parser.add_argument("-d", "--destination",    required=False, type=str, metavar="<folder path>", default=None, help=f"destination folder where resulting plots will be stored")
+    parser.add_argument("-c", "--configuration",  required=False, type=str, default="memory_benchmark", help=f"name of the configuration")
+    parser.add_argument("-i", "--interactive",    required=False, type=int, default=0, help=f"Whether open interactive plots. Requires graphical interface.")
     parser.add_argument("-t", "--plot_threshold", required=False, type=int, metavar="<threshold>", default=1024, help=f"threshold for plots to split between large and small sizes")
     args = parser.parse_args()
 
@@ -162,7 +166,13 @@ if __name__ == "__main__":
     #     sys.exit(1)
 
     # ========== DEBUGGING ==========
-    args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-hiwi\\hiwi-jan-kraus\\results"
+    args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-hiwi\\hiwi-jan-kraus-data\\2022-06-20_CUDA"
     # ===============================
+
+    if args.destination is None:
+        args.destination = os.path.join(args.source, "plots")
+
+    if not os.path.exists(args.destination):
+        os.makedirs(args.destination)
 
     main(args)

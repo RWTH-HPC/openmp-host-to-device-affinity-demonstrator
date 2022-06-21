@@ -8,7 +8,7 @@ export HWLOC_LOCAL_INSTALL_DIR=/home/jk869269/install/hwloc/2.5.0_gcc
 export CMAKE_CUDA_ARCHITECTURES=60
 export CMAKE_BUILD_TYPE=Release
 export USE_OMP_TARGET=0
-export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL/lib
+export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL
 
 LIST_COMPUTE=(0 1)
 LIST_ASYNC=(0 1)
@@ -47,7 +47,7 @@ do
                         -DLIBOMPTARGET_INSTALL_PATH=${LIBOMPTARGET_INSTALL_PATH} \
                         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
                         ../..
-                make || echo "Error"
+                make -j8 || (echo "Error" && exit)
 
                 # copy executable to right folder
                 cp -v ${TMP_BUILD_DIR}/app/distanceBenchmark_* ${TMP_BIN_DIR}/
