@@ -3,12 +3,17 @@
 import sys
 import json
 import os
-from time import time
+from time import sleep, time
 import subprocess
 import numpy as np
 
 def main():
     config_path, output_path, binary_path, numa_balancing = parse_cmd()
+
+    print(f"-- Parameter: {config_path}")
+    print(f"-- Parameter: {output_path}")
+    print(f"-- Parameter: {binary_path}")
+    print(f"-- Parameter: {numa_balancing}")
     
     config = {}
     with open(config_path, "r") as config_file:
@@ -40,7 +45,7 @@ def main():
             for key in test.keys():
                 if "OMP" in key:
                     if i == 0:
-                        print(f"-- Setting env variable --> {key}=${test[key]}")
+                        print(f"-- Setting env variable --> {key}={test[key]}")
                     env[key] = str(test[key])
 
             if i == 0:
@@ -60,6 +65,8 @@ def main():
                     is_stuck = False
                 except subprocess.TimeoutExpired:
                     print("+", end="")
+                    sleep(2)
+            sleep(2)
 
             is_stuck = True
             while is_stuck:
@@ -71,7 +78,9 @@ def main():
                     is_stuck = False
                 except subprocess.TimeoutExpired:
                     print("-", end="")
+                    sleep(2)
             print(" ", end="")
+            sleep(2)
         print("")
 
         test["best_result"] = best_output.decode("UTF-8");

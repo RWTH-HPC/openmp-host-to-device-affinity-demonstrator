@@ -1,23 +1,19 @@
 #!/bin/sh
 
 # load corresponding environment or source modules
-source ./env
+source ./load_env.sh
 
 # default configuration
 export HWLOC_LOCAL_INSTALL_DIR=/home/jk869269/install/hwloc/2.5.0_gcc
 export CMAKE_CUDA_ARCHITECTURES=60
 export CMAKE_BUILD_TYPE=Release
 export USE_OMP_TARGET=0
-export LIBOMPTARGET_LIB_PATH=""
+export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL/lib
 
-# LIST_COMPUTE=(0 1)
-# LIST_ASYNC=(0 1)
-# LIST_PINNED_MEM=(0 1)
-# LIST_UNIFIED_MEM=(0 1)
-LIST_COMPUTE=(0)
-LIST_ASYNC=(0)
-LIST_PINNED_MEM=(0)
-LIST_UNIFIED_MEM=(0)
+LIST_COMPUTE=(0 1)
+LIST_ASYNC=(0 1)
+LIST_PINNED_MEM=(0 1)
+LIST_UNIFIED_MEM=(0 1)
 
 # create directory for binaries
 CUR_DIR=$PWD
@@ -48,7 +44,7 @@ do
                         -DHWLOC_LOCAL_INSTALL_DIR=${HWLOC_LOCAL_INSTALL_DIR} \
                         -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES} \
                         -DUSE_OMP_TARGET=${USE_OMP_TARGET} \
-                        -DLIBOMPTARGET_LIB_PATH=${LIBOMPTARGET_LIB_PATH} \
+                        -DLIBOMPTARGET_INSTALL_PATH=${LIBOMPTARGET_INSTALL_PATH} \
                         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
                         ../..
                 make || echo "Error"

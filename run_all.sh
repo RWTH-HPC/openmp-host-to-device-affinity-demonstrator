@@ -1,18 +1,15 @@
 #!/bin/sh
 
 # load corresponding environment or source modules
-source ./env
+source ./load_env.sh
 
-# LIST_COMPUTE=(0 1)
-# LIST_ASYNC=(0 1)
-# LIST_PINNED_MEM=(0 1)
-# LIST_UNIFIED_MEM=(0 1)
-# LIST_NUMA_BALANCING=(0 1)
+# unlimited core files (if anything crashes)
+ulimit -c unlimited
 
-LIST_COMPUTE=(0)
-LIST_ASYNC=(0)
-LIST_PINNED_MEM=(0)
-LIST_UNIFIED_MEM=(0)
+LIST_COMPUTE=(0 1)
+LIST_ASYNC=(0 1)
+LIST_PINNED_MEM=(0 1)
+LIST_UNIFIED_MEM=(0 1)
 LIST_NUMA_BALANCING=(0 1)
 
 # create directory for binaries
@@ -33,19 +30,20 @@ do
                 do
                     TMP_NAME="c${comp}_a${async}_p${pinned}_u${unified}"
                     TMP_NAME_W_NB="nb${nb}_c${comp}_a${async}_p${pinned}_u${unified}"
-                    echo "===== Running experiments for ${TMP_NAME_W_NB}"
 
                     TMP_BIN_DIR="${BINARY_DIR}/${TMP_NAME}"
                     TMP_RESULT_DIR="${RESULT_DIR}/${TMP_NAME_W_NB}"
                     mkdir -p ${TMP_RESULT_DIR}
 
                     if [ "${nb}" = "0" ]; then
+                        echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
                         python3 ${CUR_DIR}/run_benchmark.py \
                             --config ${CUR_DIR}/config/memory_benchmark.json \
                             --binary ${TMP_BIN_DIR} \
-                            --output ${TMP_RESULT_DIR} \
-                            --no_numa_balancing
+                            --no_numa_balancing \
+                            --output ${TMP_RESULT_DIR} 
                     else
+                        echo "===== Running experiments for ${TMP_NAME_W_NB} w/ NUMA balancing"
                         python3 ${CUR_DIR}/run_benchmark.py \
                             --config ${CUR_DIR}/config/memory_benchmark.json \
                             --binary ${TMP_BIN_DIR} \

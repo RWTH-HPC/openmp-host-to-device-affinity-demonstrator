@@ -1,13 +1,17 @@
 #!/usr/local_rwth/bin/zsh
-
-#SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=2G
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=24
 #SBATCH --gres=gpu:pascal:2
+#SBATCH --account=supp0001
 #SBATCH --exclusive
-#SBATCH --job-name=___-memory_benchmark
+#SBATCH --job-name=memory_benchmark
 #SBATCH --output=output.%J.txt
-#SBATCH --time=02:00:00
+#SBATCH --time=08:00:00
 
-export MODULEPATH=$MODULEPATH:$HOME/.modules/modulefiles/PERSONAL
-source ./env
-./run_benchmark.py --config config/memory_benchmark.json --output memory_benchmark/____ --binary benchmark/build/app/___ --no_numa_balancing
+# activate custom modules (specific to user)
+module use ~/.modules
+
+# exeucte
+hostname
+zsh ./run_all.sh
