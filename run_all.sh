@@ -39,21 +39,26 @@ do
 
                     TMP_BIN_DIR="${BINARY_DIR}/${TMP_NAME}"
                     TMP_RESULT_DIR="${RESULT_DIR}/${TMP_NAME_W_NB}"
-                    mkdir -p ${TMP_RESULT_DIR}
 
-                    if [ "${nb}" = "0" ]; then
-                        echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
-                        python3 ${CUR_DIR}/run_benchmark.py \
-                            --config ${CUR_DIR}/config/memory_benchmark.json \
-                            --binary ${TMP_BIN_DIR} \
-                            --no_numa_balancing \
-                            --output ${TMP_RESULT_DIR} 
+                    if [ "${unified}" == "1" ] && [ "${pinned}" = "0" ]; then
+                        # this case does not need to be executed
                     else
-                        echo "===== Running experiments for ${TMP_NAME_W_NB} w/ NUMA balancing"
-                        python3 ${CUR_DIR}/run_benchmark.py \
-                            --config ${CUR_DIR}/config/memory_benchmark.json \
-                            --binary ${TMP_BIN_DIR} \
-                            --output ${TMP_RESULT_DIR}
+                        mkdir -p ${TMP_RESULT_DIR}
+
+                        if [ "${nb}" = "0" ]; then
+                            echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
+                            python3 ${CUR_DIR}/run_benchmark.py \
+                                --config ${CUR_DIR}/config/memory_benchmark.json \
+                                --binary ${TMP_BIN_DIR} \
+                                --no_numa_balancing \
+                                --output ${TMP_RESULT_DIR} 
+                        else
+                            echo "===== Running experiments for ${TMP_NAME_W_NB} w/ NUMA balancing"
+                            python3 ${CUR_DIR}/run_benchmark.py \
+                                --config ${CUR_DIR}/config/memory_benchmark.json \
+                                --binary ${TMP_BIN_DIR} \
+                                --output ${TMP_RESULT_DIR}
+                        fi
                     fi
                 done
             done

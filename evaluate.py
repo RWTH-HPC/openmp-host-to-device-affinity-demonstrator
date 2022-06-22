@@ -64,7 +64,7 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
     # TODO: current assuming fixed n_thr
     n_thr = grp[0].test_cases[0].n_threads
         
-    fig         = plt.figure(constrained_layout=True, figsize=(16,9))
+    fig         = plt.figure(constrained_layout=True, figsize=(12,9))
     gs          = GridSpec(3, 2, figure=fig)
     ax_all      = fig.add_subplot(gs[:2, :2])
     ax_allocate = fig.add_subplot(gs[2,0])
@@ -85,10 +85,10 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
         u_allocation_worst  = np.array([ver.data[c.name]["worst"]["allocation"]["derivation"] for c in cases])/np.sqrt(2)
         u_exection_worst    = np.array([ver.data[c.name]["worst"]["computation"]["derivation"] for c in cases])/np.sqrt(2)
 
-        ax_allocate.errorbar(mb_per_thr, allocation_best/n_thr,  yerr=u_allocation_best/n_thr,  marker='o', label=f'optimal distribution {cur_txt_ext}')
-        ax_allocate.errorbar(mb_per_thr, allocation_worst/n_thr, yerr=u_allocation_worst/n_thr, marker='o', linestyle='--', label=f'suboptimal distribution {cur_txt_ext}')
-        ax_compute.errorbar( mb_per_thr, execution_best/n_thr,   yerr=u_exection_best/n_thr,    marker='o', label=f'optimal distribution {cur_txt_ext}')
-        ax_compute.errorbar( mb_per_thr, execution_worst/n_thr,  yerr=u_exection_worst/n_thr,   marker='o', linestyle='--', label=f'suboptimal distribution {cur_txt_ext}')
+        ax_allocate.errorbar(mb_per_thr, allocation_best/n_thr,  yerr=u_allocation_best/n_thr,  marker='o', linestyle=cur_linestyle, label=f'optimal distribution {cur_txt_ext}')
+        ax_allocate.errorbar(mb_per_thr, allocation_worst/n_thr, yerr=u_allocation_worst/n_thr, marker='o', linestyle=cur_linestyle, label=f'suboptimal distribution {cur_txt_ext}')
+        ax_compute.errorbar( mb_per_thr, execution_best/n_thr,   yerr=u_exection_best/n_thr,    marker='o', linestyle=cur_linestyle, label=f'optimal distribution {cur_txt_ext}')
+        ax_compute.errorbar( mb_per_thr, execution_worst/n_thr,  yerr=u_exection_worst/n_thr,   marker='o', linestyle=cur_linestyle, label=f'suboptimal distribution {cur_txt_ext}')
         ax_all.errorbar(     mb_per_thr, (allocation_best + execution_best)/n_thr,   yerr=np.sqrt(u_allocation_best**2+u_exection_best**2)/n_thr,   marker='o', linestyle=cur_linestyle, label=f'Allocation + Computation time closest {cur_txt_ext}')
         ax_all.errorbar(     mb_per_thr, (allocation_worst + execution_worst)/n_thr, yerr=np.sqrt(u_allocation_worst**2+u_exection_worst**2)/n_thr, marker='o', linestyle=cur_linestyle, label=f'Allocation + Computation time furthest {cur_txt_ext}')
 
@@ -113,13 +113,13 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
     ax_all.grid()
     ax_all.legend()
     
-    ax_allocate.set_title("Only allocation")
+    ax_allocate.set_title("Allocation only")
     ax_allocate.set_xlabel("Copied data per task [MB]")
     # ax_allocate.set_ylabel("Duration per task / s") # TODO: ist das richtig???
     ax_allocate.set_ylabel("Avg duration [sec]")
     ax_allocate.grid()
     
-    ax_compute.set_title("Only computation")
+    ax_compute.set_title("Workphase only")
     ax_compute.set_xlabel("Copied data per task [MB]")
     # ax_allocate.set_ylabel("Duration per task / s") # TODO: ist das richtig???
     ax_compute.set_ylabel("Avg duration [sec]")
