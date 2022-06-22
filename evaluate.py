@@ -6,6 +6,7 @@ matplotlib.use('TKAgg')
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import json
+import statistics as st
 
 class TestCase:
     def __init__(self, line: str) -> None:
@@ -69,8 +70,11 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
     ax_allocate = fig.add_subplot(gs[2,0])
     ax_compute  = fig.add_subplot(gs[2,1])
 
+    path_stats = os.path.join(args.destination, f"stats.log")
+
     for ver in grp:
-        txt_balanced        = "w/ numa_balancing" if ver.has_numa_balancing else ""
+        cur_txt_ext         = "w/ numa_balancing" if ver.has_numa_balancing else ""
+        cur_linestyle       = "-" if ver.has_numa_balancing else "--"
         allocation_best     = np.array([ver.data[c.name]["best"]["allocation"]["average"] for c in cases])
         execution_best      = np.array([ver.data[c.name]["best"]["computation"]["average"] for c in cases])
         u_allocation_best   = np.array([ver.data[c.name]["best"]["allocation"]["derivation"] for c in cases])/np.sqrt(2)
@@ -81,24 +85,25 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
         u_allocation_worst  = np.array([ver.data[c.name]["worst"]["allocation"]["derivation"] for c in cases])/np.sqrt(2)
         u_exection_worst    = np.array([ver.data[c.name]["worst"]["computation"]["derivation"] for c in cases])/np.sqrt(2)
 
-        ax_allocate.errorbar(mb_per_thr, allocation_best/n_thr,  yerr=u_allocation_best/n_thr,  marker='o', label=f'optimal distribution {txt_balanced}')
-        ax_allocate.errorbar(mb_per_thr, allocation_worst/n_thr, yerr=u_allocation_worst/n_thr, marker='o', linestyle='--', label=f'suboptimal distribution {txt_balanced}')
-        ax_compute.errorbar( mb_per_thr, execution_best/n_thr,   yerr=u_exection_best/n_thr,    marker='o', label=f'optimal distribution {txt_balanced}')
-        ax_compute.errorbar( mb_per_thr, execution_worst/n_thr,  yerr=u_exection_worst/n_thr,   marker='o', linestyle='--', label=f'suboptimal distribution {txt_balanced}')
-        ax_all.errorbar(     mb_per_thr, (allocation_best + execution_best)/n_thr,   yerr=np.sqrt(u_allocation_best**2+u_exection_best**2)/n_thr,   marker='o', label=f'Allocation + Computation time closest {txt_balanced}')
-        ax_all.errorbar(     mb_per_thr, (allocation_worst + execution_worst)/n_thr, yerr=np.sqrt(u_allocation_worst**2+u_exection_worst**2)/n_thr, marker='o', linestyle='--', label=f'Allocation + Computation time furthest {txt_balanced}')
+        ax_allocate.errorbar(mb_per_thr, allocation_best/n_thr,  yerr=u_allocation_best/n_thr,  marker='o', label=f'optimal distribution {cur_txt_ext}')
+        ax_allocate.errorbar(mb_per_thr, allocation_worst/n_thr, yerr=u_allocation_worst/n_thr, marker='o', linestyle='--', label=f'suboptimal distribution {cur_txt_ext}')
+        ax_compute.errorbar( mb_per_thr, execution_best/n_thr,   yerr=u_exection_best/n_thr,    marker='o', label=f'optimal distribution {cur_txt_ext}')
+        ax_compute.errorbar( mb_per_thr, execution_worst/n_thr,  yerr=u_exection_worst/n_thr,   marker='o', linestyle='--', label=f'suboptimal distribution {cur_txt_ext}')
+        ax_all.errorbar(     mb_per_thr, (allocation_best + execution_best)/n_thr,   yerr=np.sqrt(u_allocation_best**2+u_exection_best**2)/n_thr,   marker='o', linestyle=cur_linestyle, label=f'Allocation + Computation time closest {cur_txt_ext}')
+        ax_all.errorbar(     mb_per_thr, (allocation_worst + execution_worst)/n_thr, yerr=np.sqrt(u_allocation_worst**2+u_exection_worst**2)/n_thr, marker='o', linestyle=cur_linestyle, label=f'Allocation + Computation time furthest {cur_txt_ext}')
 
-        # ========== DEBUG
-        print(f"Statistics: {ver.exe_id} {txt_balanced} ({tmp_ext})")
-        m,i    = max(list(zip(((allocation_worst + execution_worst) - (allocation_best + execution_best))/(allocation_best + execution_best),range(len(execution_worst)))))
-        mi, i2 = min(list(zip(((allocation_worst + execution_worst) - (allocation_best + execution_best))/(allocation_best + execution_best),range(len(execution_worst)))))
-        # a = (allocation_best + execution_best)[i]
-        # b = (allocation_worst + execution_worst)[i]
-        print(m,i)
-        print('Min relative difference', mb_per_thr[i2], 'MB,', mi*100,"%")
-        print('Max relative difference', mb_per_thr[i], 'MB,', m*100,"%")
-        print()
-        # ========== DEBUG
+        # writing statistics to file
+        # TODO: create proper csv file with all data (absolute, speedups, statistics)
+        with open(path_stats, mode="a") as f_stats:
+            f_stats.write(f"Statistics (Computation): {ver.exe_id} {cur_txt_ext} ({tmp_ext})\n")
+            tmp_improv  = [float((execution_worst[x]-execution_best[x])/execution_best[x]) for x in range(len(execution_worst))]
+            improv_mean = st.mean(tmp_improv)
+            improv_min = min(tmp_improv); i_min = tmp_improv.index(improv_min)
+            improv_max = max(tmp_improv); i_max = tmp_improv.index(improv_max)
+            f_stats.write(f'Min  relative difference {"{:8.2f}".format(mb_per_thr[i_min])} MB, {"{:8.3f}".format(improv_min*100)} %\n')
+            f_stats.write(f'Mean relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_mean*100)} %\n')
+            f_stats.write(f'Max  relative difference {"{:8.2f}".format(mb_per_thr[i_max])} MB, {"{:8.3f}".format(improv_max*100)} %\n')
+            f_stats.write("\n")
     
     fig.suptitle(ver.create_title() + f", m_sizes [{min_m_size}, {tmp_max_val}]")
     ax_all.set_title("Allocation + Computation")
@@ -154,19 +159,19 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parses and summarizes execution time measurement results")
-    parser.add_argument("-s", "--source",         required=False, type=str, metavar="<folder path>", help=f"source folder containing outputs")
+    parser.add_argument("-s", "--source",         required=True,  type=str, metavar="<folder path>", help=f"source folder containing outputs")
     parser.add_argument("-d", "--destination",    required=False, type=str, metavar="<folder path>", default=None, help=f"destination folder where resulting plots will be stored")
     parser.add_argument("-c", "--configuration",  required=False, type=str, default="memory_benchmark", help=f"name of the configuration")
     parser.add_argument("-i", "--interactive",    required=False, type=int, default=0, help=f"Whether open interactive plots. Requires graphical interface.")
     parser.add_argument("-t", "--plot_threshold", required=False, type=int, metavar="<threshold>", default=1024, help=f"threshold for plots to split between large and small sizes")
     args = parser.parse_args()
 
-    # if not os.path.exists(args.source):
-    #     print(f"Source folder path \"{args.source}\" does not exist")
-    #     sys.exit(1)
+    if not os.path.exists(args.source):
+        print(f"Source folder path \"{args.source}\" does not exist")
+        sys.exit(1)
 
     # ========== DEBUGGING ==========
-    args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-hiwi\\hiwi-jan-kraus-data\\2022-06-20_CUDA"
+    # args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-hiwi\\hiwi-jan-kraus-data\\2022-06-22_LLVM"
     # ===============================
 
     if args.destination is None:
