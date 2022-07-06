@@ -32,10 +32,6 @@
 #include "../kernel/kernel.hpp"
 #include "../kernel/memory.hpp"
 
-#if CHECK_GENERATED_TASK_ID
-#include <mutex>
-#endif
-
 typedef enum matrix_size_mode_t {
     matrix_size_mode_normal = 0,
     matrix_size_mode_non_uniform = 1
@@ -77,37 +73,18 @@ static inline void* alloc(size_t size)
     return p;
 }
 
-void initialize_matrix_rnd(double *mat, int matrixSize) {
-    double lower_bound = 0;
-    double upper_bound = 10000;
-    std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
-    std::default_random_engine re;
-
+void initialize_matrix(double *mat, int matrixSize, double val) {
     for(int i=0; i<matrixSize*matrixSize; i++) {
-        mat[i]= unif(re);
-    }
-}
-
-void initialize_matrix_zero(double *mat, int matrixSize) {
-    for(int i=0; i<matrixSize*matrixSize; i++) {
-        mat[i]= 0;
-    }
-}
-
-void initialize_matrix_test_A(double *mat, int matrixSize) {
-    for(int i=0; i<matrixSize*matrixSize; i++) {
-            mat[i]= 1;
+            mat[i]= val;
     }
 }
 
 bool check_test_matrix(double *c, int matrix_idx, double val, int matrixSize) {
-    if (NUM_REPETITIONS > 0) {
-        for(int i=0;i<matrixSize;i++) {
-            for(int j=0;j<matrixSize;j++) {
-                if(fabs(c[i*matrixSize+j] - val) > 1e-3) {
-                    printf("(OS_TID:%ld): Error in matrix %03d entry (%d,%d) expected:%f but value is %f\n", syscall(SYS_gettid),matrix_idx,i,j,val,c[i*matrixSize+j]);
-                    return false;
-                }
+    for(int i=0;i<matrixSize;i++) {
+        for(int j=0;j<matrixSize;j++) {
+            if(fabs(c[i*matrixSize+j] - val) > 1e-3) {
+                printf("(OS_TID:%ld): Error in matrix %03d entry (%d,%d) expected:%f but value is %f\n", syscall(SYS_gettid),matrix_idx,i,j,val,c[i*matrixSize+j]);
+                return false;
             }
         }
     }
@@ -238,13 +215,7 @@ int parse_command_line_args(int argc, char **argv) {
     } else if(argc==2) {
         matrix_size_mode = matrix_size_mode_normal;
         matrixSize = atoi( argv[1] );
-        if(RANDOMDIST) {
-            int *dist = new int[1];
-            compute_random_task_distribution(dist, 1);
-            delete[] dist;
-        } else {
-            numberOfTasks = NR_TASKS;
-        }
+        numberOfTasks = NR_TASKS;
     } else if(argc==3) {
         matrix_size_mode = matrix_size_mode_normal;
         LOG("using user-defined initial load distribution...");
@@ -328,9 +299,9 @@ int main(int argc, char **argv)
 #endif // ASYNC
     }
 
-#if (GPU == 0)
+#if (USE_CLOSEST_GPU == 0)
     int target_distance_index = 0;
-#elif (GPU == 1)
+#else
     int target_distance_index = num_cuda_devices - 1;
 #endif
 
@@ -347,7 +318,6 @@ int main(int argc, char **argv)
         thread_device[omp_get_thread_num() * 32] = tmp_devices[target_distance_index];
 #endif // USE_OMP_TARGET
     }
-
 
     double **matrices_a, **matrices_b, **matrices_c;
     matrices_a = new double*[numberOfTasks];
@@ -372,21 +342,12 @@ int main(int argc, char **argv)
         matrices_b[i] = (double*) kernel::memory::pinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_device[omp_get_thread_num()*32]);
         matrices_c[i] = (double*) kernel::memory::pinnedMalloc((size_t)cur_size*cur_size*sizeof(double), thread_device[omp_get_thread_num()*32]);
 #endif
-        if(RANDOMINIT) {
-            initialize_matrix_rnd(matrices_a[i], cur_size);
-            initialize_matrix_rnd(matrices_b[i], cur_size);
-            initialize_matrix_zero(matrices_c[i], cur_size);
-        }
-        else {
-            initialize_matrix_test_A(matrices_a[i], cur_size);
-            initialize_matrix_test_A(matrices_b[i], cur_size);
-            initialize_matrix_zero(matrices_c[i], cur_size);
-        }
+        initialize_matrix(matrices_a[i], cur_size, 1);
+        initialize_matrix(matrices_b[i], cur_size, 1);
+        initialize_matrix(matrices_c[i], cur_size, 0);
     }
     double memory_allocation_time = omp_get_wtime()-fTimeStart;
     std::cout << "Memory Allocation duration: " << memory_allocation_time << std::endl;
-
-
 
     fTimeStart=omp_get_wtime();
 
@@ -397,20 +358,15 @@ int main(int argc, char **argv)
             cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 
-        // Currently not necessary to create tasks and make sure that 
-        // iteration is really executed by desired thread
-        // #pragma omp task default(shared) firstprivate(i,cur_size)
-        // {
-            double t0 = omp_get_wtime();
+        double t0 = omp_get_wtime();
 #if (ASYNC == 0)
-            devices[thread_device[omp_get_thread_num() * 32]]->execute(
-                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
+        devices[thread_device[omp_get_thread_num() * 32]]->execute(
+                matrices_a[i], matrices_b[i], matrices_c[i], cur_size);
 #elif (ASYNC == 1)
-            devices[thread_device[omp_get_thread_num() * 32]]->executeAsync(
-                    matrices_a[i], matrices_b[i], matrices_c[i], cur_size, omp_get_thread_num());
+        devices[thread_device[omp_get_thread_num() * 32]]->executeAsync(
+                matrices_a[i], matrices_b[i], matrices_c[i], cur_size, omp_get_thread_num());
 #endif // ASYNC
-            thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
-        // }
+        thread_waiting_time[omp_get_thread_num()*32] += omp_get_wtime() - t0;
     }
 
 #if (ASYNC == 1)
@@ -425,14 +381,13 @@ int main(int argc, char **argv)
     fTimeEnd=omp_get_wtime();
     wTimeHost = fTimeEnd-fTimeStart;
 
-    printf("Computations with normal tasking took %.5f\n", wTimeHost);
+    printf("Computations took %.5f\n", wTimeHost);
     for (int i = 0; i < omp_get_max_threads(); i++) {
         std::cout << "Invocation latency of thread " << i << " on GPU" << thread_device[i*32] << ": " << thread_waiting_time[i*32] << std::endl;
     }
     // TODO: fix min max calculation when working with padded array
     //const auto [min, max] = std::minmax_element(thread_waiting_time.begin(), thread_waiting_time.end());
     //std::cout << "Ratio longest waiting time / shortest waiting time: "  << *max / *min << std::endl;
-
 
 #if (COMPUTE == 1)
     pass = true;
@@ -442,23 +397,7 @@ int main(int argc, char **argv)
             if(matrix_size_mode == matrix_size_mode_non_uniform) {
                 cur_size = non_uniform_full_array_matrix_sizes[t];
             }
-
-            //for (int i = 0; i < cur_size; i++) {
-            //    std::cout << "[ ";
-            //    for (int j = 0; j < cur_size; j++) {
-            //        std::cout << matrices_a[t][i*cur_size+j] << " ";
-            //    }
-            //    std::cout << "] * [ ";
-            //    for (int j = 0; j < cur_size; j++) {
-            //        std::cout << matrices_b[t][i*cur_size+j] << " ";
-            //    }
-            //    std::cout << "] = [ ";
-            //    for (int j = 0; j < cur_size; j++) {
-            //        std::cout << matrices_c[t][i*cur_size+j] << " ";
-            //    }
-            //    std::cout << "]" << std::endl;
-            //}
-
+            
             pass &= check_test_matrix(matrices_c[t], t, cur_size, cur_size);
         }
         if(pass)

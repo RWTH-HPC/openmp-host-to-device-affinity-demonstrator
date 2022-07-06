@@ -97,6 +97,12 @@
             "OMP_NUM_THREADS" : 12,
             "OMP_PLACES": "cores",
             "parameters" : "8192 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "9216 12"
         }
     ]
 }

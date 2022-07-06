@@ -3,12 +3,17 @@
 import sys
 import json
 import os
-from time import time
+from time import sleep, time
 import subprocess
 import numpy as np
 
 def main():
     config_path, output_path, binary_path, numa_balancing = parse_cmd()
+
+    print(f"-- Parameter: {config_path}")
+    print(f"-- Parameter: {output_path}")
+    print(f"-- Parameter: {binary_path}")
+    print(f"-- Parameter: {numa_balancing}")
     
     config = {}
     with open(config_path, "r") as config_file:
@@ -31,8 +36,6 @@ def main():
         guess *= 2
 
         for i in range(config["repetitions"]):
-            print(i, end="")
-            sys.stdout.flush()
             cmd_best = [binary_path + "distanceBenchmark_best"] + test["parameters"].split(" ")
             cmd_worst = [binary_path + "distanceBenchmark_worst"] + test["parameters"].split(" ")
             if not numa_balancing:
@@ -41,7 +44,16 @@ def main():
             env = os.environ
             for key in test.keys():
                 if "OMP" in key:
+                    if i == 0:
+                        print(f"-- Setting env variable --> {key}={test[key]}")
                     env[key] = str(test[key])
+
+            if i == 0:
+                print(f"-- Executing (best) : \"{cmd_best}\"")
+                print(f"-- Executing (worst): \"{cmd_worst}\"")
+
+            print(i, end="")
+            sys.stdout.flush()
 
             is_stuck = True
             while is_stuck:
@@ -53,6 +65,8 @@ def main():
                     is_stuck = False
                 except subprocess.TimeoutExpired:
                     print("+", end="")
+                    sleep(2)
+            sleep(2)
 
             is_stuck = True
             while is_stuck:
@@ -64,7 +78,9 @@ def main():
                     is_stuck = False
                 except subprocess.TimeoutExpired:
                     print("-", end="")
+                    sleep(2)
             print(" ", end="")
+            sleep(2)
         print("")
 
         test["best_result"] = best_output.decode("UTF-8");
@@ -84,7 +100,7 @@ def main():
 
     with open(output_path + config["name"] + "_parsed.json", "w") as result_file:
         result_file.write(json.dumps(results, indent=4))
-    print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json");
+    print("Parsed json output file can be found at", output_path + config["name"] + "_parsed.json")
         
 
 
@@ -93,7 +109,7 @@ def parse_results(results):
     known_keys = {
             "CUDA device distance initalization was successful and took" : "init",
             "Memory Allocation duration" : "allocation",
-            "Computations with normal tasking took" : "computation",
+            "Computations took" : "computation",
             "Invocation latency of thread" : "wait",
             #"Ratio longest waiting time / shortest waiting time" : "ratio"
     }
@@ -152,9 +168,9 @@ def parse_cmd():
             if arg == "--config":
                 config_path = sys.argv[i+1]
             elif arg == "--output":
-                output_path = sys.argv[i+1].strip("/")
+                output_path = sys.argv[i+1].strip()
             elif arg == "--binary":
-                binary_path = sys.argv[i+1].strip("/")
+                binary_path = sys.argv[i+1].strip()
             elif arg == "--no_numa_balancing":
                 numa_balancing = False
 
