@@ -9,8 +9,9 @@
 - hwloc/2.5.0
 - For LLVM variant: [openmp/target-dev](https://github.com/jkravs/llvm-project/tree/target-dev/openmp) (read the README.md there)
 
+**Note:** Convenience scripts for compiling and running are sourcing `load_env.sh` which is loading the required modules. Customize that script according to your cluster environment  
+
 ## Compiling
-* TODO: load_env
 * This benchmark provides a CMake build system
 * There a several flags that can be for the compilation
 
@@ -77,5 +78,17 @@ nvprof --print-gpu.trace ./distanceBenchmark_(best|worst) [matrix_size] [number_
 * This repo contains additional script to automatically run a series of benchmark executions based on a configuration file
 * These scripts are called `run_all.sh` (main entry point) and `run_benchmark.py` (automate single benchmark run based on config)
 
-## Evaluation [TODO]
-* tbd
+## Evaluation
+* To gather data from the result files of the benchmark run execute
+```bash
+# print help and list parameters
+python3 ./evaluate.py -h
+# run evaluation in data in result directory
+python3 ./evaluate.py -s <result_dir>
+```
+* This script will create plots for all variants executed
+* For each variant there will be two plots
+  * one focusing on the small problem sizes
+  * one focusing on the larger problem sizes
+* Specify `--plot_threshold <thr>` where to split plots between small and large. Default is 1024
+  
