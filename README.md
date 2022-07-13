@@ -7,7 +7,7 @@
 - cuda/11.4 or similar versions
 - cmake>=3.13
 - hwloc/2.5.0
-- For LLVM variant: [openmp/target-dev](https://github.com/jkravs/llvm-project/tree/target-dev/openmp) (read the README.md there)
+- For LLVM variant: [extended LLVM openmp runtime](https://github.com/RWTH-HPC/llvm-project/tree/thread-to-device-affinity/openmp) (read the `README.md` there)
 
 **Note:** Convenience scripts for compiling and running are sourcing `load_env.sh` which is loading the required modules. Customize that script according to your cluster environment  
 
