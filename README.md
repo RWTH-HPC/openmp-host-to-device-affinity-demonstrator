@@ -1,4 +1,4 @@
-# hiwi-jan-kraus
+# OpenMP Host-to-Device Affinity Showcase
 
 ## Prerequisits for benchmark codes
 
@@ -41,14 +41,14 @@ cmake \
     -DUSE_OMP_TARGET=1 \
     -DLIBOMPTARGET_INSTALL_PATH=<path/to/hwloc/install> \
     -DCMAKE_BUILD_TYPE=Release \
-    ..
+    ../src
 # build benchmarks
 make
 ```
 * This will build two executables
   * `distanceBenchmark_best`: select always the closest GPU for thread
   * `distanceBenchmark_worst`: select always the GPU furthest away from thread
-* Additionally, there is a script (`build_all.sh`) to build all variants that are currently supported. Just set the desired paths and common variables in the script
+* Additionally, there is a script (`scripts/build_all.sh`) to build all variants that are currently supported. Just set the desired paths and common variables in the script
 
 ## Running
 * If you want to run the LLVM variant, make sure that additional paths are set to use the customized runtime
@@ -76,15 +76,15 @@ nvprof --print-gpu.trace ./distanceBenchmark_(best|worst) [matrix_size] [number_
 
 ## Semi-Automatic Benchmarking
 * This repo contains additional script to automatically run a series of benchmark executions based on a configuration file
-* These scripts are called `run_all.sh` (main entry point) and `run_benchmark.py` (automate single benchmark run based on config)
+* These scripts are called `scripts/run_all.sh` (main entry point) and `scripts/run_benchmark.py` (automate single benchmark run based on config)
 
 ## Evaluation
 * To gather data from the result files of the benchmark run execute
 ```bash
 # print help and list parameters
-python3 ./evaluate.py -h
+python3 scripts/evaluate.py -h
 # run evaluation in data in result directory
-python3 ./evaluate.py -s <result_dir>
+python3 scripts/evaluate.py -s <result_dir>
 ```
 * This script will create plots for all variants executed
 * For each variant there will be two plots

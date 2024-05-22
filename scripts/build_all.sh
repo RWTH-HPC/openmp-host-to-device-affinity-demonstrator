@@ -17,7 +17,7 @@ LIST_UNIFIED_MEM=(0 1)
 
 # create directory for binaries
 CUR_DIR=$PWD
-BINARY_DIR=${CUR_DIR}/benchmark/bin
+BINARY_DIR=${CUR_DIR}/bin
 mkdir -p ${BINARY_DIR}
 
 for comp in "${LIST_COMPUTE[@]}"
@@ -31,7 +31,7 @@ do
                 TMP_NAME="c${comp}_a${async}_p${pinned}_u${unified}"
                 echo "===== Building ${TMP_NAME}"
 
-                TMP_BUILD_DIR="${CUR_DIR}/benchmark/BUILD/${TMP_NAME}"
+                TMP_BUILD_DIR="${CUR_DIR}/BUILD/${TMP_NAME}"
                 TMP_BIN_DIR="${BINARY_DIR}/${TMP_NAME}"
                 mkdir -p ${TMP_BUILD_DIR}
                 mkdir -p ${TMP_BIN_DIR}

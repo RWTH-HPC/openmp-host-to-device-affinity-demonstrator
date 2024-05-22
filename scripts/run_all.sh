@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # load corresponding environment or source modules
 source ./load_env.sh
 
@@ -20,7 +22,7 @@ LIST_NUMA_BALANCING=(0 1)
 
 # create directory for binaries
 CUR_DIR=$PWD
-BINARY_DIR=${CUR_DIR}/benchmark/bin
+BINARY_DIR=${CUR_DIR}/bin
 RESULT_DIR=${CUR_DIR}/results
 mkdir -p ${RESULT_DIR}
 
