@@ -1,9 +1,10 @@
 #!/usr/local_rwth/bin/zsh
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=24
-#SBATCH --gres=gpu:pascal:2
+#SBATCH --cpus-per-task=96
+#SBATCH --gres=gpu:4
 #SBATCH --account=supp0001
+#SBATCH --partition=c23g
 #SBATCH --exclusive
 #SBATCH --job-name=memory_benchmark
 #SBATCH --output=output.%J.txt

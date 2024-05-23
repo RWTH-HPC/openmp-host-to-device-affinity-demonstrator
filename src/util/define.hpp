@@ -1,3 +1,10 @@
+#ifndef __UTIL_DEFINE__
+#define __UTIL_DEFINE__
+
+#include <cstdio>
+#include <cstdlib>
+#include <cuda_runtime.h>
+
 // number of tasks
 #ifndef NR_TASKS
 #define NR_TASKS 200
@@ -35,9 +42,9 @@
 #define ASYNC 0
 #endif
 
-//#ifndef BLOCK_SIZE
-//#define BLOCK_SIZE 2
-//#endif
+// #ifndef BLOCK_SIZE
+// #define BLOCK_SIZE 2
+// #endif
 
 #ifndef PINNED_MEMORY
 #define PINNED_MEMORY 0
@@ -51,16 +58,35 @@
 #define USE_OMP_TARGET 0
 #endif
 
-//#define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
+// #define LOG(rank, str) fprintf(stderr, "#R%d: %s\n", rank, str)
 #define LOG(str) printf("%s\n", str)
 
 #define SPEC_RESTRICT __restrict__
-//#define SPEC_RESTRICT restrict
+// #define SPEC_RESTRICT restrict
 
 #ifndef DPxMOD
 #define DPxMOD "0x%0*" PRIxPTR
 #endif
 
 #ifndef DPxPTR
-#define DPxPTR(ptr) ((int)(2*sizeof(uintptr_t))), ((uintptr_t) (ptr))
+#define DPxPTR(ptr) ((int)(2 * sizeof(uintptr_t))), ((uintptr_t)(ptr))
 #endif
+
+#define gpuErrChk(ans)                                                                                                 \
+    {                                                                                                                  \
+        gpuAssert((ans), __FILE__, __LINE__);                                                                          \
+    }
+
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
+{
+    if (code != cudaSuccess)
+    {
+        fprintf(stderr, "CUDA Assert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        if (abort)
+        {
+            exit(code);
+        }
+    }
+}
+
+#endif // __UTIL_DEFINE__

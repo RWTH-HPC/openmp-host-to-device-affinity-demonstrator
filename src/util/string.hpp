@@ -2,11 +2,11 @@
 #define __UTIL_STRING__
 
 #include <iostream>
-#include <sstream>
 #include <list>
+#include <sstream>
 #include <string>
 
-std::list<std::string> split(const std::string& s, char delimiter)
+std::list<std::string> split(const std::string &s, char delimiter)
 {
     std::list<std::string> tokens;
     std::string token;
@@ -17,4 +17,4 @@ std::list<std::string> split(const std::string& s, char delimiter)
     }
     return tokens;
 }
-#endif
+#endif // __UTIL_STRING__

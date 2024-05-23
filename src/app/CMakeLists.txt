@@ -1,5 +1,4 @@
-set(SOURCE_FILES
-    matrix_example_api.cpp)
+set(SOURCE_FILES matrix_example_api.cpp)
 
 add_executable(distanceBenchmark_best ${SOURCE_FILES})
 target_compile_definitions(distanceBenchmark_best PRIVATE USE_CLOSEST_GPU=0)
