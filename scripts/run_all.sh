@@ -50,15 +50,15 @@ do
 
                         if [ "${nb}" = "0" ]; then
                             echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
-                            python3 ${CUR_DIR}/run_benchmark.py \
-                                --config ${CUR_DIR}/config/memory_benchmark.json \
+                            python3 ${SCRIPT_DIR}/run_benchmark.py \
+                                --config ${SCRIPT_DIR}/../config/memory_benchmark.json \
                                 --binary ${TMP_BIN_DIR} \
                                 --no_numa_balancing \
-                                --output ${TMP_RESULT_DIR} 
+                                --output ${TMP_RESULT_DIR}
                         else
                             echo "===== Running experiments for ${TMP_NAME_W_NB} w/ NUMA balancing"
-                            python3 ${CUR_DIR}/run_benchmark.py \
-                                --config ${CUR_DIR}/config/memory_benchmark.json \
+                            python3 ${SCRIPT_DIR}/run_benchmark.py \
+                                --config ${CUR_DIR}/../config/memory_benchmark.json \
                                 --binary ${TMP_BIN_DIR} \
                                 --output ${TMP_RESULT_DIR}
                         fi
