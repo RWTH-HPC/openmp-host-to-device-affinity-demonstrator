@@ -40,7 +40,7 @@ matrix_size_mode_t matrix_size_mode = matrix_size_mode_normal;
 int numberOfTasks = 0;
 
 // mode: normal
-int matrixSize = 100;
+size_t matrixSize = 100;
 
 // mode: non-uniform
 typedef enum non_uniform_ordering_t
@@ -51,13 +51,13 @@ typedef enum non_uniform_ordering_t
 
 typedef struct non_uniform_matrix_settings_t
 {
-    int matrix_size;
-    int number_tasks;
+    size_t matrix_size;
+    size_t number_tasks;
 } non_uniform_matrix_settings_t;
 
 non_uniform_ordering_t non_uniform_ordering = non_uniform_ordering_high_to_low;
 std::vector<non_uniform_matrix_settings_t> non_uniform_matrix_settings;
-std::vector<int> non_uniform_full_array_matrix_sizes;
+std::vector<size_t> non_uniform_full_array_matrix_sizes;
 
 #define MEM_ALIGNMENT 4096
 
@@ -68,29 +68,32 @@ static inline void *alloc(size_t size)
 #else
     void *p = malloc(size);
 #endif
-#if !USE_HUGE_PAGES
-    madvise(p, size, MADV_NOHUGEPAGE);
-#endif
+
+// Note: Currently disable madvise due to negative performance impact on recent architectures
+// #if !USE_HUGE_PAGES
+//     madvise(p, size, MADV_NOHUGEPAGE);
+// #endif
+
     return p;
 }
 
-void initialize_matrix(double *mat, int matrixSize, double val)
+void initialize_matrix(double *mat, size_t matrixSize, double val)
 {
-    for (int i = 0; i < matrixSize * matrixSize; i++)
+    for (size_t i = 0; i < matrixSize * matrixSize; i++)
     {
         mat[i] = val;
     }
 }
 
-bool check_test_matrix(double *c, int matrix_idx, double val, int matrixSize)
+bool check_test_matrix(double *c, int matrix_idx, double val, size_t matrixSize)
 {
-    for (int i = 0; i < matrixSize; i++)
+    for (size_t i = 0; i < matrixSize; i++)
     {
-        for (int j = 0; j < matrixSize; j++)
+        for (size_t j = 0; j < matrixSize; j++)
         {
             if (fabs(c[i * matrixSize + j] - val) > 1e-3)
             {
-                printf("(OS_TID:%ld): Error in matrix %03d entry (%d,%d) expected:%f but value is %f\n",
+                printf("(OS_TID:%ld): Error in matrix %03d entry (%zu,%zu) expected:%f but value is %f\n",
                        syscall(SYS_gettid), matrix_idx, i, j, val, c[i * matrixSize + j]);
                 return false;
             }
@@ -369,21 +372,21 @@ int main(int argc, char **argv)
     for (int i = 0; i < numberOfTasks; i++)
     {
 
-        int cur_size = matrixSize;
+        size_t cur_size = matrixSize;
         if (matrix_size_mode == matrix_size_mode_non_uniform)
         {
             cur_size = non_uniform_full_array_matrix_sizes[i];
         }
 #if (PINNED_MEMORY == 0)
-        matrices_a[i] = (double *)alloc((long)cur_size * cur_size * sizeof(double));
-        matrices_b[i] = (double *)alloc((long)cur_size * cur_size * sizeof(double));
-        matrices_c[i] = (double *)alloc((long)cur_size * cur_size * sizeof(double));
+        matrices_a[i] = (double *)alloc(cur_size * cur_size * sizeof(double));
+        matrices_b[i] = (double *)alloc(cur_size * cur_size * sizeof(double));
+        matrices_c[i] = (double *)alloc(cur_size * cur_size * sizeof(double));
 #else
-        matrices_a[i] = (double *)kernel::memory::pinnedMalloc((size_t)cur_size * cur_size * sizeof(double),
+        matrices_a[i] = (double *)kernel::memory::pinnedMalloc(cur_size * cur_size * sizeof(double),
                                                                thread_device[omp_get_thread_num() * 32]);
-        matrices_b[i] = (double *)kernel::memory::pinnedMalloc((size_t)cur_size * cur_size * sizeof(double),
+        matrices_b[i] = (double *)kernel::memory::pinnedMalloc(cur_size * cur_size * sizeof(double),
                                                                thread_device[omp_get_thread_num() * 32]);
-        matrices_c[i] = (double *)kernel::memory::pinnedMalloc((size_t)cur_size * cur_size * sizeof(double),
+        matrices_c[i] = (double *)kernel::memory::pinnedMalloc(cur_size * cur_size * sizeof(double),
                                                                thread_device[omp_get_thread_num() * 32]);
 #endif
         initialize_matrix(matrices_a[i], cur_size, 1);
@@ -398,7 +401,7 @@ int main(int argc, char **argv)
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < numberOfTasks; i++)
     {
-        int cur_size = matrixSize;
+        size_t cur_size = matrixSize;
         if (matrix_size_mode == matrix_size_mode_non_uniform)
         {
             cur_size = non_uniform_full_array_matrix_sizes[i];

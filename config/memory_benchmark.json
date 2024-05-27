@@ -103,6 +103,24 @@
             "OMP_NUM_THREADS" : 12,
             "OMP_PLACES": "cores",
             "parameters" : "9216 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "10240 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "11264 12"
+        },
+        {
+            "OMP_PROC_BIND" : "spread",
+            "OMP_NUM_THREADS" : 12,
+            "OMP_PLACES": "cores",
+            "parameters" : "12288 12"
         }
     ]
 }
