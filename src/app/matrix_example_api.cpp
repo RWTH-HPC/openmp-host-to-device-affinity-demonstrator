@@ -328,14 +328,14 @@ int main(int argc, char **argv)
 #else
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyOMP>(i);
 #endif // USE_OMP_TARGET
-#else
+#else // ASYNC == 0
 #if (USE_OMP_TARGET == 0)
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyCUDA>(
             i, omp_get_max_threads());
 #else
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyOMP>(i);
 #endif // USE_OMP_TARGET
-#endif // ASYNC
+#endif // ASYNC == 0
     }
 
 #if (USE_CLOSEST_GPU == 0)

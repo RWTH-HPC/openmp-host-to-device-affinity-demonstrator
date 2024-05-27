@@ -1,6 +1,6 @@
 #include "kernel.hpp"
 
-#if (USE_OMP_TARGET == 0)
+#if (USE_OMP_TARGET == 1)
 
 using namespace kernel;
 
@@ -57,4 +57,4 @@ void MatrixMultiplyOMP::executeAsync(double const *a, double const *b, double *c
     }
 }
 
-#endif
+#endif // USE_OMP_TARGET
