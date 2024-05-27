@@ -10,7 +10,7 @@ source ${SCRIPT_DIR}/load_env.sh
 ulimit -c unlimited
 
 export USE_OMP_TARGET=0
-if [ "${USE_OMP_TARGET}" = "1" ]; then
+if [[ "${USE_OMP_TARGET}" = "1" ]]; then
     export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL
     export LD_LIBRARY_PATH="$LIBOMPTARGET_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
 fi
@@ -43,12 +43,12 @@ do
                     TMP_BIN_DIR="${BINARY_DIR}/${TMP_NAME}"
                     TMP_RESULT_DIR="${RESULT_DIR}/${TMP_NAME_W_NB}"
 
-                    if [ "${unified}" == "1" ] && [ "${pinned}" = "0" ]; then
+                    if [[ "${unified}" == "1" ]] && [[ "${pinned}" = "0" ]]; then
                         # this case does not need to be executed
                     else
                         mkdir -p ${TMP_RESULT_DIR}
 
-                        if [ "${nb}" = "0" ]; then
+                        if [[ "${nb}" = "0" ]]; then
                             echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
                             python3 ${SCRIPT_DIR}/run_benchmark.py \
                                 --config ${SCRIPT_DIR}/../config/memory_benchmark.json \

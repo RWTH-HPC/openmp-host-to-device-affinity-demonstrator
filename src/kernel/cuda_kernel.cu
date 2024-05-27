@@ -9,17 +9,17 @@ using namespace kernel;
 
 // static std::vector<cudaStream_t> streams;
 
-__global__ void matrix_mutliply(double const *a, double const *b, double *c, int const n)
+__global__ void matrix_mutliply(double const *a, double const *b, double *c, size_t const n)
 {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t row = blockIdx.y * blockDim.y + threadIdx.y;
+    size_t col = blockIdx.x * blockDim.x + threadIdx.x;
 
     float tmpSum = 0;
 
     if (row < n && col < n)
     {
         // each thread computes one element of the block sub-matrix
-        for (int i = 0; i < n; i++)
+        for (size_t i = 0; i < n; i++)
         {
             tmpSum += a[row * n + i] * b[i * n + col];
         }
@@ -44,7 +44,7 @@ MatrixMultiplyCUDA::~MatrixMultiplyCUDA()
     free(streams);
 }
 
-void MatrixMultiplyCUDA::execute(double const *a, double const *b, double *c, int const n) const
+void MatrixMultiplyCUDA::execute(double const *a, double const *b, double *c, size_t const n) const
 {
     gpuErrChk(cudaSetDevice(device));
 #if (COMPUTE == 1)
@@ -57,12 +57,12 @@ void MatrixMultiplyCUDA::execute(double const *a, double const *b, double *c, in
         blocks_per_grid.x = (n + threads_per_block.x - 1) / threads_per_block.x;
         blocks_per_grid.y = (n + threads_per_block.y - 1) / threads_per_block.y;
     }
-#endif
+#endif // COMPUTE == 1
     double *d_a;
     double *d_b;
     double *d_c;
 
-    int size = sizeof(double) * n * n;
+    size_t size = sizeof(double) * n * n;
 
     gpuErrChk(cudaMalloc((void **)&d_a, size));
     gpuErrChk(cudaMalloc((void **)&d_b, size));
@@ -73,7 +73,7 @@ void MatrixMultiplyCUDA::execute(double const *a, double const *b, double *c, in
 
 #if (COMPUTE == 1)
     matrix_mutliply<<<blocks_per_grid, threads_per_block, 0>>>(d_a, d_b, d_c, n);
-#endif
+#endif // COMPUTE == 1
 
     gpuErrChk(cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost));
 
@@ -82,7 +82,7 @@ void MatrixMultiplyCUDA::execute(double const *a, double const *b, double *c, in
     gpuErrChk(cudaFree(d_c));
 }
 
-void MatrixMultiplyCUDA::executeAsync(double const *a, double const *b, double *c, int const n,
+void MatrixMultiplyCUDA::executeAsync(double const *a, double const *b, double *c, size_t const n,
                                       int const stream_id) const
 {
 
@@ -97,12 +97,12 @@ void MatrixMultiplyCUDA::executeAsync(double const *a, double const *b, double *
         blocks_per_grid.x = (n + threads_per_block.x - 1) / threads_per_block.x;
         blocks_per_grid.y = (n + threads_per_block.y - 1) / threads_per_block.y;
     }
-#endif
+#endif // COMPUTE == 1
     double *d_a;
     double *d_b;
     double *d_c;
 
-    int size = sizeof(double) * n * n;
+    size_t size = sizeof(double) * n * n;
 
     cudaStream_t stream = streams[stream_id];
 
@@ -115,7 +115,7 @@ void MatrixMultiplyCUDA::executeAsync(double const *a, double const *b, double *
 
 #if (COMPUTE == 1)
     matrix_mutliply<<<blocks_per_grid, threads_per_block, 0, stream>>>(d_a, d_b, d_c, n);
-#endif
+#endif // COMPUTE == 1
 
     gpuErrChk(cudaMemcpyAsync(c, d_c, size, cudaMemcpyDefault, stream));
 

@@ -166,13 +166,13 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--plot_threshold", required=False, type=int, metavar="<threshold>", default=1024, help=f"threshold for plots to split between large and small sizes")
     args = parser.parse_args()
 
+    # ========== DEBUGGING ==========
+    # args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-research\\openmp\\host-to-device-affinity\\data-demonstrator-host-to-device-affinity\\results"
+    # ===============================
+
     if not os.path.exists(args.source):
         print(f"Source folder path \"{args.source}\" does not exist")
         sys.exit(1)
-
-    # ========== DEBUGGING ==========
-    # args.source = "C:\\J.Klinkenberg.Local\\repos\\hpc-hiwi\\hiwi-jan-kraus-data\\2022-06-22_LLVM"
-    # ===============================
 
     if args.destination is None:
         args.destination = os.path.join(args.source, "plots")
