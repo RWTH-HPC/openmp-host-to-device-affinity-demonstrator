@@ -46,6 +46,7 @@ do
                         -DCMAKE_CUDA_ARCHITECTURES=${CMAKE_CUDA_ARCHITECTURES} \
                         -DUSE_OMP_TARGET=${USE_OMP_TARGET} \
                         -DLIBOMPTARGET_INSTALL_PATH=${LIBOMPTARGET_INSTALL_PATH} \
+                        -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
                         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
                         ${SCRIPT_DIR}/../src
                 make -j8 || (echo "Error" && exit)
