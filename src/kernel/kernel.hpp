@@ -42,7 +42,7 @@ class MatrixMultiplyOMP : public MatrixMultiplyDevice
 {
   public:
     MatrixMultiplyOMP(int device);
-    void execute(double const *a, double const *b, double *c, size_tnt const n) const override;
+    void execute(double const *a, double const *b, double *c, size_t const n) const override;
     void executeAsync(double const *a, double const *b, double *c, size_t const n, int const stream_id) const override;
 };
 #endif
