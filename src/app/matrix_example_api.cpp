@@ -69,10 +69,10 @@ static inline void *alloc(size_t size)
     void *p = malloc(size);
 #endif
 
-// Note: Currently disable madvise due to negative performance impact on recent architectures
-// #if !USE_HUGE_PAGES
-//     madvise(p, size, MADV_NOHUGEPAGE);
-// #endif
+    // Note: Currently disable madvise due to negative performance impact on recent architectures
+    // #if !USE_HUGE_PAGES
+    //     madvise(p, size, MADV_NOHUGEPAGE);
+    // #endif
 
     return p;
 }
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
 #else
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyOMP>(i);
 #endif // USE_OMP_TARGET
-#else // ASYNC == 0
+#else  // ASYNC == 0
 #if (USE_OMP_TARGET == 0)
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyCUDA>(
             i, omp_get_max_threads());
@@ -359,6 +359,11 @@ int main(int argc, char **argv)
         omp_get_devices_in_order(num_cuda_devices, tmp_devices);
         thread_device[omp_get_thread_num() * 32] = tmp_devices[target_distance_index];
 #endif // USE_OMP_TARGET
+    }
+
+    for (int t = 0; t < omp_get_max_threads(); t++)
+    {
+        printf("Thread %d -> Target Device = %d\n", t, thread_device[t * 32]);
     }
 
     double **matrices_a, **matrices_b, **matrices_c;
