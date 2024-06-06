@@ -2,7 +2,7 @@ import argparse
 import os, sys
 import numpy as np
 import matplotlib
-matplotlib.use('TKAgg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import json
@@ -97,12 +97,18 @@ def plot_data(grp: list[CVersion], args, threshold_limits):
         with open(path_stats, mode="a") as f_stats:
             f_stats.write(f"Statistics (Computation): {ver.exe_id} {cur_txt_ext} ({tmp_ext})\n")
             tmp_improv  = [float((execution_worst[x]-execution_best[x])/execution_best[x]) for x in range(len(execution_worst))]
-            improv_mean = st.mean(tmp_improv)
-            improv_min = min(tmp_improv); i_min = tmp_improv.index(improv_min)
-            improv_max = max(tmp_improv); i_max = tmp_improv.index(improv_max)
-            f_stats.write(f'Min  relative difference {"{:8.2f}".format(mb_per_thr[i_min])} MB, {"{:8.3f}".format(improv_min*100)} %\n')
-            f_stats.write(f'Mean relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_mean*100)} %\n')
-            f_stats.write(f'Max  relative difference {"{:8.2f}".format(mb_per_thr[i_max])} MB, {"{:8.3f}".format(improv_max*100)} %\n')
+            improv_mean = improv_min = improv_max = 0
+            if len(tmp_improv) > 0:
+                improv_mean = st.mean(tmp_improv)
+                improv_min = min(tmp_improv); i_min = tmp_improv.index(improv_min)
+                improv_max = max(tmp_improv); i_max = tmp_improv.index(improv_max)
+                f_stats.write(f'Min  relative difference {"{:8.2f}".format(mb_per_thr[i_min])} MB, {"{:8.3f}".format(improv_min*100)} %\n')
+                f_stats.write(f'Mean relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_mean*100)} %\n')
+                f_stats.write(f'Max  relative difference {"{:8.2f}".format(mb_per_thr[i_max])} MB, {"{:8.3f}".format(improv_max*100)} %\n')
+            else:
+                f_stats.write(f'Min  relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_min*100)} %\n')
+                f_stats.write(f'Mean relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_mean*100)} %\n')
+                f_stats.write(f'Max  relative difference {"{:8.2f}".format(-1)} MB, {"{:8.3f}".format(improv_max*100)} %\n')
             f_stats.write("\n")
     
     fig.suptitle(ver.create_title() + f", m_sizes [{min_m_size}, {tmp_max_val}]")
