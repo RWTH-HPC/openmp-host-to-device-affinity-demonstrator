@@ -3,6 +3,10 @@
 # determine folder where current script is located
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# EXP_CONFIG="memory_benchmark.json"
+# EXP_CONFIG="memory_benchmark_4threads.json"
+EXP_CONFIG="memory_benchmark_12threads.json"
+
 # load corresponding environment or source modules
 source ${SCRIPT_DIR}/load_env.sh
 
@@ -11,8 +15,8 @@ ulimit -c unlimited
 
 export USE_OMP_TARGET=0
 if [[ "${USE_OMP_TARGET}" = "1" ]]; then
-    export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-hiwi/llvm-project/openmp/INSTALL
-    export LD_LIBRARY_PATH="$LIBOMPTARGET_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
+    export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-research/openmp/llvm-project/openmp/INSTALL
+    export LD_LIBRARY_PATH="${LIBOMPTARGET_INSTALL_PATH}/lib:${LD_LIBRARY_PATH}"
 fi
 
 LIST_COMPUTE=(0 1)
@@ -51,14 +55,14 @@ do
                         if [[ "${nb}" = "0" ]]; then
                             echo "===== Running experiments for ${TMP_NAME_W_NB} w/o NUMA balancing"
                             python3 ${SCRIPT_DIR}/run_benchmark.py \
-                                --config ${SCRIPT_DIR}/../config/memory_benchmark.json \
+                                --config ${SCRIPT_DIR}/../config/${EXP_CONFIG} \
                                 --binary ${TMP_BIN_DIR} \
                                 --no_numa_balancing \
                                 --output ${TMP_RESULT_DIR}
                         else
                             echo "===== Running experiments for ${TMP_NAME_W_NB} w/ NUMA balancing"
                             python3 ${SCRIPT_DIR}/run_benchmark.py \
-                                --config ${CUR_DIR}/../config/memory_benchmark.json \
+                                --config ${CUR_DIR}/../config/${EXP_CONFIG} \
                                 --binary ${TMP_BIN_DIR} \
                                 --output ${TMP_RESULT_DIR}
                         fi

@@ -10,7 +10,7 @@ source ${SCRIPT_DIR}/load_env.sh
 export CMAKE_CUDA_ARCHITECTURES=90
 export CMAKE_BUILD_TYPE=Release
 export USE_OMP_TARGET=0
-export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/INSTALL
+export LIBOMPTARGET_INSTALL_PATH=/work/jk869269/repos/hpc-research/openmp/llvm-project/openmp/INSTALL
 
 LIST_COMPUTE=(0 1)
 LIST_ASYNC=(0 1)
