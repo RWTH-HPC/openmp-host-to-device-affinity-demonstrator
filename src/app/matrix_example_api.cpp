@@ -24,11 +24,11 @@
 
 #if (USE_OMP_TARGET == 0)
 #include "../util/cuda_device_distance.hpp"
-#include "../util/system_info.hpp"
 #endif
 
 #include "../kernel/kernel.hpp"
 #include "../kernel/memory.hpp"
+#include "../util/system_info.hpp"
 
 typedef enum matrix_size_mode_t
 {
@@ -360,7 +360,8 @@ int main(int argc, char **argv)
                 omp_get_devices_in_order(num_cuda_devices, closest_devices);
 #endif // USE_OMP_TARGET
        // now select proper target device
-                dev = system_info::select_device(USE_CLOSEST_GPU == 1, num_cuda_devices, closest_devices, occupation_ctr);
+                dev =
+                    system_info::select_device(USE_CLOSEST_GPU == 1, num_cuda_devices, closest_devices, occupation_ctr);
                 occupation_ctr[dev]++;
                 thread_device[tn * 32] = dev;
                 printf("Thread %02d (CPU: %02d, NUMA-Node: %02d) -> Target Device = %d\n", tn, cpu, numa, dev);
