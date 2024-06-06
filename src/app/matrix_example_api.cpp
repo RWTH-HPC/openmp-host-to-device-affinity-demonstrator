@@ -322,9 +322,11 @@ int main(int argc, char **argv)
     std::vector<double> thread_waiting_time(omp_get_max_threads() * 32);
     std::vector<int> thread_device(omp_get_max_threads() * 32);
     std::vector<std::unique_ptr<kernel::MatrixMultiplyDevice>> devices(num_cuda_devices);
+    std::vector<int> occupation_ctr(num_cuda_devices);
 
     for (int i = 0; i < num_cuda_devices; i++)
     {
+        occupation_ctr[i] = 0;
 #if (ASYNC == 0)
 #if (USE_OMP_TARGET == 0)
         devices[i] = (std::unique_ptr<kernel::MatrixMultiplyDevice>)std::make_unique<kernel::MatrixMultiplyCUDA>(i);
@@ -341,29 +343,30 @@ int main(int argc, char **argv)
 #endif // ASYNC == 0
     }
 
-#if (USE_CLOSEST_GPU == 0)
-    int target_distance_index = 0;
-#else
-    int target_distance_index = num_cuda_devices - 1;
-#endif
-
 #pragma omp parallel
     {
+        int tn = omp_get_thread_num();
+        for (int t = 0; t < omp_get_num_threads(); t++)
+        {
+            if (t == tn)
+            {
+                unsigned int cpu = -1, numa = -1;
+                int dev = -1;
+                int closest_devices[num_cuda_devices];
 #if (USE_OMP_TARGET == 0)
-        unsigned int cpu, numa;
-        system_info::get_current_cpu(cpu, numa);
-        thread_device[omp_get_thread_num() * 32] =
-            distance::get_closest_cuda_device_to_numa_node_by_distance(target_distance_index, numa);
+                system_info::get_current_cpu(cpu, numa);
+                distance::get_closest_cuda_devices(numa, num_cuda_devices, closest_devices);
 #else
-        int tmp_devices[num_cuda_devices];
-        omp_get_devices_in_order(num_cuda_devices, tmp_devices);
-        thread_device[omp_get_thread_num() * 32] = tmp_devices[target_distance_index];
+                omp_get_devices_in_order(num_cuda_devices, closest_devices);
 #endif // USE_OMP_TARGET
-    }
-
-    for (int t = 0; t < omp_get_max_threads(); t++)
-    {
-        printf("Thread %d -> Target Device = %d\n", t, thread_device[t * 32]);
+       // now select proper target device
+                dev = system_info::select_device(USE_CLOSEST_GPU == 1, num_cuda_devices, closest_devices, occupation_ctr);
+                occupation_ctr[dev]++;
+                thread_device[tn * 32] = dev;
+                printf("Thread %02d (CPU: %02d, NUMA-Node: %02d) -> Target Device = %d\n", tn, cpu, numa, dev);
+            }
+#pragma omp barrier
+        }
     }
 
     double **matrices_a, **matrices_b, **matrices_c;

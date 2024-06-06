@@ -185,19 +185,23 @@ int distance::init()
 }
 
 /*
- * Returns the cuda index of the "distance_index"-th closest device to the numa_node "numa_node"
+ * Returns the cuda device indices ordered by closeness to the desired NUMA domain
  * Only returns negative numbers on failure
  */
-int distance::get_closest_cuda_device_to_numa_node_by_distance(unsigned int distance_index,
-                                                               const unsigned int numa_node)
+int distance::get_closest_cuda_devices(const unsigned int numa_node, int desired_number, int *devices)
 {
     if (!initalized)
     {
         return -1;
     }
 
-    if (distance_index >= numa_cuda_device_lookup_table[numa_node].size())
-        distance_index = numa_cuda_device_lookup_table[numa_node].size() - 1;
+    int dev_found = desired_number;
+    if (dev_found > numa_cuda_device_lookup_table[numa_node].size())
+        dev_found = numa_cuda_device_lookup_table[numa_node].size();
 
-    return numa_cuda_device_lookup_table[numa_node][distance_index];
+    for (int i = 0; i < dev_found; i++)
+    {
+        devices[i] = numa_cuda_device_lookup_table[numa_node][i];
+    }
+    return dev_found;
 }

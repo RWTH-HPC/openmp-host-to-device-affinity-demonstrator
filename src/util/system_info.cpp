@@ -47,3 +47,27 @@ void system_info::get_cuda_device_info(unsigned int device)
     std::cout << "name[256] " << props.name << std::endl;
     std::cout << "unifiedAddressing " << props.unifiedAddressing << std::endl;
 }
+
+int system_info::select_device(bool closest, int num_devices, int *closest_devices, std::vector<int> &occupation_ctr)
+{
+    int half = num_devices / 2;
+    int start = closest ? 0 : half;
+    int end = closest ? half : num_devices;
+
+    int dev_min = -1;
+    int val_min = 100000;
+
+    // select device number with minimum occupation count to avoid load balance issues
+    for (int i = start; i < end; i++)
+    {
+        int tmp_dev = closest_devices[i];
+        int cur_occ = occupation_ctr[tmp_dev];
+        if (cur_occ < val_min)
+        {
+            val_min = cur_occ;
+            dev_min = tmp_dev;
+        }
+    }
+
+    return dev_min;
+}
